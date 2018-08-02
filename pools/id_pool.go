@@ -66,8 +66,8 @@ func (pool *IdPool) MaxUsedCount() int64 {
 
 func (pool *IdPool) CurrUsedCount() int64 {
 
-	pool.Lock()
-	defer pool.Unlock()
+	pool.RLock()
+	defer pool.RUnlock()
 
 	return pool.maxUsedId - pool.startId - int64(len(pool.used))
 }
