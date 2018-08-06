@@ -6,16 +6,16 @@ import (
 	"testing"
 )
 
-func (pool *IdPool) want(want *IdPool, t *testing.T) {
+func (p *IdPool) want(want *IdPool, t *testing.T) {
 
-	if pool.maxUsedId != want.maxUsedId {
+	if p.maxUsedId != want.maxUsedId {
 
-		t.Errorf("pool.maxUsed = %#v, want %#v", pool.maxUsedId, want.maxUsedId)
+		t.Errorf("pool.maxUsed = %#v, want %#v", p.maxUsedId, want.maxUsedId)
 	}
 
-	if !reflect.DeepEqual(pool.used, want.used) {
+	if !reflect.DeepEqual(p.used, want.used) {
 
-		t.Errorf("pool.used = %#v, want %#v", pool.used, want.used)
+		t.Errorf("pool.used = %#v, want %#v", p.used, want.used)
 	}
 }
 

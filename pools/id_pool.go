@@ -5,6 +5,7 @@ import (
 	"sync"
 )
 
+//IdPool id池
 type IdPool struct {
 	sync.RWMutex
 	used      map[int64]bool
@@ -12,6 +13,8 @@ type IdPool struct {
 	maxUsedId int64
 }
 
+//NewIdPool 创建id池
+//startId id开始单位
 func NewIdPool(startId int64) *IdPool {
 
 	return &IdPool{
@@ -21,53 +24,57 @@ func NewIdPool(startId int64) *IdPool {
 	}
 }
 
-func (pool *IdPool) Get() int64 {
+//Get 获取一个id
+func (p *IdPool) Get() int64 {
 
-	pool.Lock()
-	defer pool.Unlock()
+	p.Lock()
+	defer p.Unlock()
 
-	for id := range pool.used {
+	for id := range p.used {
 
-		delete(pool.used, id)
+		delete(p.used, id)
 
 		return id
 	}
 
-	pool.maxUsedId = pool.maxUsedId + 1
+	p.maxUsedId = p.maxUsedId + 1
 
-	return pool.maxUsedId
+	return p.maxUsedId
 }
 
-func (pool *IdPool) Put(id int64) {
+//Put 放回一个id
+func (p *IdPool) Put(id int64) {
 
-	pool.Lock()
-	defer pool.Unlock()
+	p.Lock()
+	defer p.Unlock()
 
-	if id <= pool.startId || id > pool.maxUsedId {
+	if id <= p.startId || id > p.maxUsedId {
 
-		panic(fmt.Errorf("IDPool.Put(%v): invalid value, must be in the range [%v,%v]", id, pool.startId, pool.maxUsedId))
+		panic(fmt.Errorf("IDPool.Put(%v): invalid value, must be in the range [%v,%v]", id, p.startId, p.maxUsedId))
 	}
 
-	if pool.used[id] {
+	if p.used[id] {
 
 		panic(fmt.Errorf("IDPool.Put(%v): can't put value that was already recycled", id))
 	}
 
-	pool.used[id] = true
+	p.used[id] = true
 }
 
-func (pool *IdPool) MaxUsedCount() int64 {
+//MaxUsedCount 同意时刻最多使用id数量
+func (p *IdPool) MaxUsedCount() int64 {
 
-	pool.RLock()
-	defer pool.RUnlock()
+	p.RLock()
+	defer p.RUnlock()
 
-	return pool.maxUsedId - pool.startId
+	return p.maxUsedId - p.startId
 }
 
-func (pool *IdPool) CurrUsedCount() int64 {
+//CurrUsedCount 当前使用id数量
+func (p *IdPool) CurrUsedCount() int64 {
 
-	pool.RLock()
-	defer pool.RUnlock()
+	p.RLock()
+	defer p.RUnlock()
 
-	return pool.maxUsedId - pool.startId - int64(len(pool.used))
+	return p.maxUsedId - p.startId - int64(len(p.used))
 }
