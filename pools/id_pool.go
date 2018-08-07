@@ -61,7 +61,7 @@ func (p *IdPool) Put(id int64) {
 	p.used[id] = true
 }
 
-//MaxUsedCount 同意时刻最多使用id数量
+//MaxUsedCount 同一时刻最多使用id数量
 func (p *IdPool) MaxUsedCount() int64 {
 
 	p.RLock()
