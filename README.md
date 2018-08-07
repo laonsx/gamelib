@@ -1,2 +1,2 @@
 # gamelib
-golang项目工具类
+golang游戏项目
