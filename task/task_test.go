@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestTaskRun(t *testing.T) {
+func TestTask_Run(t *testing.T) {
 
 	task := New(32, func(v interface{}) {
 
