@@ -50,16 +50,6 @@ func (t *Task) Send(v interface{}) error {
 	return nil
 }
 
-func (t *Task) get() worker {
-
-	return <-t.workerPool
-}
-
-func (t *Task) put(w worker) {
-
-	t.workerPool <- w
-}
-
 func (t *Task) Close() {
 
 	t.closed = true
@@ -69,6 +59,16 @@ func (t *Task) Close() {
 func (t *Task) Wait() {
 
 	t.wg.Wait()
+}
+
+func (t *Task) get() worker {
+
+	return <-t.workerPool
+}
+
+func (t *Task) put(w worker) {
+
+	t.workerPool <- w
 }
 
 type worker struct {
