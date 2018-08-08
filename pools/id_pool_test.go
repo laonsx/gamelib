@@ -36,12 +36,12 @@ func TestIDPoolSecondGet(t *testing.T) {
 	pool := NewIdPool(100)
 	pool.Get()
 
-	if got := pool.Get(); got != 2 {
+	if got := pool.Get(); got != 102 {
 
 		t.Errorf("pool.Get() = %v, want 2", got)
 	}
 
-	pool.want(&IdPool{used: map[int64]bool{}, maxUsedId: 1, startId: 100}, t)
+	pool.want(&IdPool{used: map[int64]bool{}, maxUsedId: 102, startId: 100}, t)
 }
 
 func TestIDPoolPutToUsedSet(t *testing.T) {
