@@ -10,7 +10,7 @@ import (
 
 func init() {
 
-	InitRedis(Serializer, UnSerializer, NewRedisConf("main", "127.0.0.1", "6378", 0), NewRedisConf("main", "127.0.0.1", "6379", 64), NewRedisConf("queue", "127.0.0.1", "6379", 0))
+	InitRedis(Serializer, UnSerializer, NewRedisConf("main", "127.0.0.1", "6378", 0), NewRedisConf("main", "127.0.0.1", "6379", 64))
 }
 
 func Serializer(data interface{}) ([]byte, error) {
