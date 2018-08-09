@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"context"
 	"errors"
 	"io"
 	"log"
@@ -14,9 +13,12 @@ import (
 	"gamelib/codec"
 	"gamelib/gofunc"
 
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
+
+const SESSION_UID = "uid"
 
 type methodType struct {
 	sync.Mutex
@@ -131,7 +133,7 @@ func init() {
 
 	server = new(Server)
 	server.serviceMap = make(map[string]*service)
-	server.stream = make(map[string]Game_StreamServer)
+	//server.stream = make(map[string]Game_StreamServer)
 }
 
 // Session 存储用户信息
@@ -148,7 +150,7 @@ type Server struct {
 	mux        sync.RWMutex
 	serviceMap map[string]*service
 	grpcServer *grpc.Server
-	stream     map[string]Game_StreamServer
+	//stream     map[string]Game_StreamServer
 }
 
 // NewServer 创建Server对象
@@ -168,7 +170,7 @@ func (s *Server) Start() {
 
 	RegisterGameServer(grpcServer, s)
 
-	log.Printf("rpcserver listening on %s", s.listener.Addr().String())
+	log.Printf("%s rpcserver listening on %s", s.Name, s.listener.Addr().String())
 	grpcServer.Serve(s.listener)
 }
 
@@ -231,25 +233,31 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 		return errors.New("stream ctx error")
 	}
 
-	name := md["name"][0]
+	//name := md["name"][0]
 
 	var session *Session
-	if name == "agent" {
+	//if name == "agent" {
 
-		userID, _ := strconv.ParseUint(md["uid"][0], 10, 64)
+	if len(md[SESSION_UID]) > 0 {
+
+		userID, _ := strconv.ParseUint(md[SESSION_UID][0], 10, 64)
 		session = new(Session)
 		session.UserId = userID
-	} else {
-
-		s.stream[name] = stream
 	}
+	//userID, _ := strconv.ParseUint(md["uid"][0], 10, 64)
+	//session = new(Session)
+	//session.UserId = userID
+	//} else {
+
+	//s.stream[name] = stream
+	//}
 
 	defer func() {
 
-		if name != "agent" {
-
-			delete(s.stream, name)
-		}
+		//if name != "agent" {
+		//
+		//	delete(s.stream, name)
+		//}
 
 		close(gameMsg)
 	}()
