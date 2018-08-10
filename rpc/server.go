@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"gamelib/codec"
 	"gamelib/gofunc"
 
 	"golang.org/x/net/context"
@@ -18,128 +17,15 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const SESSION_UID = "uid"
-
-type methodType struct {
-	sync.Mutex
-	method    reflect.Method
-	argType   reflect.Type
-	replyType reflect.Type
-	numCalls  uint
-}
-
-type service struct {
-	name   string
-	rcvr   reflect.Value
-	typ    reflect.Type
-	method map[string]*methodType
-}
-
-//处理客户端发送的数据包
-func (s *service) handle(methodName string, in *GameMsg, session *Session) (*GameMsg, error) {
-
-	defer gofunc.PrintPanic()
-
-	method, ok := s.method[methodName]
-	if !ok {
-
-		return nil, errors.New("method not found")
-	}
-
-	if session == nil {
-
-		return s.call(methodName, in)
-	}
-
-	function := method.method.Func
-	rvs := []reflect.Value{s.rcvr, reflect.ValueOf(session), reflect.ValueOf(in.Msg)}
-	ret := function.Call(rvs)
-	resp := ret[0].Bytes()
-
-	gameMsg := &GameMsg{ServiceName: in.ServiceName, Msg: resp}
-
-	return gameMsg, nil
-}
-
-func (s *service) call(methodName string, in *GameMsg) (*GameMsg, error) {
-
-	defer gofunc.PrintPanic()
-
-	method, ok := s.method[methodName]
-	if !ok {
-
-		return nil, errors.New("method not found")
-	}
-
-	function := method.method.Func
-	var rvs []reflect.Value
-	argIsValue := false
-	var argv reflect.Value
-
-	if method.argType.Kind() == reflect.Ptr {
-
-		argv = reflect.New(method.argType.Elem())
-	} else {
-
-		argv = reflect.New(method.argType)
-		argIsValue = true
-	}
-
-	err := codec.UnMsgPack(in.Msg, argv.Interface())
-	if err != nil {
-
-		return nil, err
-	}
-
-	if argIsValue {
-
-		argv = argv.Elem()
-	}
-
-	var replyv reflect.Value
-	if method.replyType.Kind() == reflect.Ptr {
-
-		replyv = reflect.New(method.replyType.Elem())
-	} else {
-
-		replyv = reflect.New(method.replyType).Elem()
-	}
-
-	rvs = []reflect.Value{s.rcvr, argv, replyv}
-	retV := function.Call(rvs)
-	errInter := retV[0].Interface()
-	errmsg := ""
-	var b []byte
-	if errInter != nil {
-
-		errmsg = errInter.(error).Error()
-	} else {
-
-		b, err = codec.MsgPack(replyv.Interface())
-		if err != nil {
-
-			return nil, err
-		}
-	}
-
-	gameMsg := &GameMsg{ServiceName: in.ServiceName, Msg: b, Error: errmsg}
-
-	return gameMsg, nil
-}
-
-var server *Server
-
 func init() {
 
 	server = new(Server)
 	server.serviceMap = make(map[string]*service)
-	//server.stream = make(map[string]Game_StreamServer)
 }
 
-// Session 存储用户信息
-type Session struct {
-	UserId uint64
-}
+var server *Server
+
+const SESSIONUID = "uid"
 
 // Server 对象
 type Server struct {
@@ -150,7 +36,6 @@ type Server struct {
 	mux        sync.RWMutex
 	serviceMap map[string]*service
 	grpcServer *grpc.Server
-	//stream     map[string]Game_StreamServer
 }
 
 // NewServer 创建Server对象
@@ -182,7 +67,7 @@ func (s *Server) Close() {
 }
 
 // Call grpc server接口实现
-func (s *Server) Call(ctx context.Context, in *GameMsg) (resp *GameMsg, err error) {
+func (s *Server) Call(ctx context.Context, in *GameMsg) (*GameMsg, error) {
 
 	dot := strings.LastIndex(in.ServiceName, ".")
 	sname := in.ServiceName[:dot]
@@ -193,9 +78,9 @@ func (s *Server) Call(ctx context.Context, in *GameMsg) (resp *GameMsg, err erro
 		return nil, errors.New("service not found")
 	}
 
-	resp, err = serv.call(mname, in)
+	resp, err := serv.handle(mname, in)
 
-	return
+	return resp, err
 }
 
 // Stream grpc server接口实现
@@ -233,31 +118,16 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 		return errors.New("stream ctx error")
 	}
 
-	//name := md["name"][0]
-
 	var session *Session
-	//if name == "agent" {
 
-	if len(md[SESSION_UID]) > 0 {
+	if len(md[SESSIONUID]) > 0 {
 
-		userID, _ := strconv.ParseUint(md[SESSION_UID][0], 10, 64)
+		userID, _ := strconv.ParseUint(md[SESSIONUID][0], 10, 64)
 		session = new(Session)
-		session.UserId = userID
+		session.Uid = userID
 	}
-	//userID, _ := strconv.ParseUint(md["uid"][0], 10, 64)
-	//session = new(Session)
-	//session.UserId = userID
-	//} else {
-
-	//s.stream[name] = stream
-	//}
 
 	defer func() {
-
-		//if name != "agent" {
-		//
-		//	delete(s.stream, name)
-		//}
 
 		close(gameMsg)
 	}()
@@ -277,7 +147,12 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 				return errors.New("service not found")
 			}
 
-			resp, err := serv.handle(mname, in, session)
+			if in.Session == nil {
+
+				in.Session = session
+			}
+
+			resp, err := serv.handle(mname, in)
 			if err != nil {
 
 				log.Printf("rpcserver handle %v", err)
@@ -327,42 +202,69 @@ func RegisterService(v interface{}) error {
 	}
 
 	s.name = sname
-	s.method = suitableMethods(s.typ, true)
+	s.method = suitableMethods(s.typ)
 	server.serviceMap[s.name] = s
 
 	return nil
 }
 
-func suitableMethods(typ reflect.Type, reportErr bool) map[string]*methodType {
-
-	methods := make(map[string]*methodType)
-
+func suitableMethods(typ reflect.Type) map[string]reflect.Method {
+	methods := make(map[string]reflect.Method)
 	for m := 0; m < typ.NumMethod(); m++ {
-
 		method := typ.Method(m)
 		mtype := method.Type
 		mname := method.Name
 
 		if method.PkgPath != "" {
-
 			continue
 		}
 
-		argType := mtype.In(1)
-		replyType := mtype.In(2)
+		if mtype.NumOut() != 2 {
 
-		if mtype.NumOut() != 1 {
-
-			if reportErr {
-
-				log.Println("method", mname, "has wrong number of outs:", mtype.NumOut())
-			}
-
+			log.Println("method", mname, "has wrong number of outs:", mtype.NumOut())
 			continue
 		}
 
-		methods[mname] = &methodType{method: method, argType: argType, replyType: replyType}
+		if mtype.NumIn() != 3 {
+
+			log.Println("method", mname, "has wrong number of ins:", mtype.NumIn())
+			continue
+		}
+
+		methods[mname] = method
 	}
 
 	return methods
+}
+
+type service struct {
+	name   string
+	rcvr   reflect.Value
+	typ    reflect.Type
+	method map[string]reflect.Method
+}
+
+//处理客户端发送的数据包
+func (s *service) handle(methodName string, in *GameMsg) (*GameMsg, error) {
+
+	defer gofunc.PrintPanic()
+
+	method, ok := s.method[methodName]
+	if !ok {
+
+		return nil, errors.New("method not found")
+	}
+
+	function := method.Func
+	rvs := []reflect.Value{s.rcvr, reflect.ValueOf(in.Msg), reflect.ValueOf(in.Session)}
+	ret := function.Call(rvs)
+	resp := ret[0].Bytes()
+	errInter := ret[1].Interface()
+
+	if errInter != nil {
+
+		return nil, errInter.(error)
+	}
+
+	return &GameMsg{ServiceName: in.ServiceName, Msg: resp}, nil
 }

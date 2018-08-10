@@ -12,5 +12,9 @@ service Game {
 message GameMsg {
     string ServiceName = 1;
     bytes Msg = 2;
-    string Error = 3;
+    Session Session = 3;
+}
+
+message Session {
+    uint64 Uid = 1;
 }

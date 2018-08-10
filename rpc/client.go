@@ -2,13 +2,10 @@ package rpc
 
 import (
 	"errors"
-	"log"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"gamelib/codec"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -103,7 +100,7 @@ func (c *Client) newClient(node string) (GameClient, error) {
 		return gameClient, nil
 	}
 
-	return nil, errors.New("node conf")
+	return nil, errors.New("node conf not found")
 }
 
 // GetName 根据协议号 获取节点名称和服务名
@@ -137,14 +134,14 @@ func GetPNum(service string) (pnum uint16, err error) {
 }
 
 // Stream 获取一个流
-func Stream(node string, md map[string]string) (stream Game_StreamClient, err error) {
+func Stream(node string, md map[string]string) (Game_StreamClient, error) {
 
 	var c GameClient
 
-	c, err = client.newClient(node)
+	c, err := client.newClient(node)
 	if err != nil {
 
-		return
+		return nil, err
 	}
 
 	var ctx = context.Background()
@@ -153,89 +150,57 @@ func Stream(node string, md map[string]string) (stream Game_StreamClient, err er
 		ctx = metadata.NewOutgoingContext(ctx, metadata.New(md))
 	}
 
-	stream, err = c.Stream(ctx)
+	stream, err := c.Stream(ctx)
 
-	return
+	return stream, err
 }
 
-func streamCall(stream Game_StreamClient, service string, data interface{}, reply ...interface{}) error {
+func StreamCall(node string, service string, data []byte, session *Session) ([]byte, error) {
 
-	b, err := codec.MsgPack(data)
-	if err != nil {
+	stream, ok := streamClient[node]
+	if !ok {
 
-		return err
+		stream, err := Stream(node, nil)
+		if err != nil {
+
+			return nil, err
+		}
+
+		streamClient[node] = stream
 	}
 
-	msg := &GameMsg{ServiceName: service, Msg: b}
-
-	err = stream.Send(msg)
+	err := stream.Send(&GameMsg{ServiceName: service, Msg: data, Session: session})
 	if err != nil {
 
-		return err
+		return nil, err
 	}
 
 	ret, err := stream.Recv()
 	if err != nil {
 
-		return err
+		return nil, err
 	}
 
-	if len(ret.Error) != 0 {
-
-		return errors.New(ret.Error)
-	}
-
-	if ret.Msg != nil && len(reply) > 0 {
-
-		err = codec.UnMsgPack(ret.Msg, reply)
-	}
-
-	if err != nil {
-
-		log.Printf("rpc stream call s=%s err=%s", service, err.Error())
-	}
-
-	return err
+	return ret.Msg, err
 }
 
 // Call 简单的grpc调用
-func Call(node string, service string, data interface{}, reply ...interface{}) error {
+func Call(node string, service string, data []byte, session *Session) ([]byte, error) {
 
 	c, err := client.newClient(node)
 	if err != nil {
 
-		return err
-	}
-
-	b, err := codec.MsgPack(data)
-	if err != nil {
-
-		return err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), callTimeout)
 	defer cancel()
 
-	ret, err := c.Call(ctx, &GameMsg{ServiceName: service, Msg: b})
+	ret, err := c.Call(ctx, &GameMsg{ServiceName: service, Msg: data, Session: session})
 	if err != nil {
 
-		return err
+		return nil, err
 	}
 
-	if len(ret.Error) > 0 {
-
-		return errors.New(ret.Error)
-	}
-
-	if ret.Msg != nil && len(reply) > 0 {
-
-		err = codec.UnMsgPack(ret.Msg, reply[0])
-	}
-
-	if err != nil {
-
-		log.Printf("rpc call s=%s err=%s", service, err.Error())
-	}
-
-	return err
+	return ret.Msg, err
 }
