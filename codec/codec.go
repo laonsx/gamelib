@@ -2,6 +2,7 @@ package codec
 
 import (
 	"bytes"
+
 	"github.com/ugorji/go/codec"
 )
 

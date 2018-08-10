@@ -1,9 +1,10 @@
 package redis
 
 import (
-	"gamelib/g"
 	"log"
 	"time"
+
+	"gamelib/g"
 )
 
 //RegisterQueueHandler 注册一个队列处理方法
