@@ -18,17 +18,6 @@ var (
 	streamClient = make(map[string]Game_StreamClient)
 )
 
-// Client rpc Client结构
-type Client struct {
-	name           string
-	mux            sync.Mutex
-	clients        map[string]GameClient
-	cluster        map[string]string
-	servicesMap    map[string]uint16
-	servicesNumMap map[uint16]string
-	opts           []grpc.DialOption
-}
-
 // InitClient 初始化客户端
 func InitClient(name string, cluster map[string]string, services [][]string, opts []grpc.DialOption) {
 
@@ -74,33 +63,6 @@ func ReloadMethodConf(services [][]string) {
 
 	client.servicesMap = serviceMap
 	client.servicesNumMap = servicesNumMap
-}
-
-func (c *Client) newClient(node string) (GameClient, error) {
-
-	if v, ok := c.clients[node]; ok {
-
-		return v, nil
-	}
-
-	c.mux.Lock()
-	defer c.mux.Unlock()
-
-	if addr, ok := c.cluster[node]; ok {
-
-		conn, err := grpc.Dial(addr, c.opts...)
-		if err != nil {
-
-			return nil, err
-		}
-
-		gameClient := NewGameClient(conn)
-		c.clients[node] = gameClient
-
-		return gameClient, nil
-	}
-
-	return nil, errors.New("node conf not found")
 }
 
 // GetName 根据协议号 获取节点名称和服务名
@@ -203,4 +165,42 @@ func Call(node string, service string, data []byte, session *Session) ([]byte, e
 	}
 
 	return ret.Msg, err
+}
+
+// Client rpc Client结构
+type Client struct {
+	name           string
+	mux            sync.Mutex
+	clients        map[string]GameClient
+	cluster        map[string]string
+	servicesMap    map[string]uint16
+	servicesNumMap map[uint16]string
+	opts           []grpc.DialOption
+}
+
+func (c *Client) newClient(node string) (GameClient, error) {
+
+	if v, ok := c.clients[node]; ok {
+
+		return v, nil
+	}
+
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	if addr, ok := c.cluster[node]; ok {
+
+		conn, err := grpc.Dial(addr, c.opts...)
+		if err != nil {
+
+			return nil, err
+		}
+
+		gameClient := NewGameClient(conn)
+		c.clients[node] = gameClient
+
+		return gameClient, nil
+	}
+
+	return nil, errors.New("node conf not found")
 }
