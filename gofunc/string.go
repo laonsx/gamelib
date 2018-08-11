@@ -3,6 +3,7 @@ package gofunc
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"regexp"
 )
 
 //SubStr 截取字符串
@@ -86,4 +87,23 @@ func MD5(s string) string {
 	h.Write([]byte(s))
 
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+//StrLen 字符串长度
+func StrLen(s string) int {
+
+	var l int
+	r := []rune(s)
+	for _, v := range r {
+
+		if v > 127 {
+
+			l += 2
+		} else {
+
+			l++
+		}
+	}
+
+	return l
 }
