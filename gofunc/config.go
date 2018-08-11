@@ -14,22 +14,14 @@ func init() {
 	appPath = appPath + string(os.PathSeparator)
 	appPath = filepath.Join(appPath + "..")
 
-	dataConf = &gameDataConf{data: make(map[string]interface{})}
 }
 
 var appPath string
-var dataConf *gameDataConf
 
 const (
 	CONFIGS = "configs"
 	DATAS   = "datas"
 )
-
-// gameDataConf 游戏策划配置
-type gameDataConf struct {
-	mux  sync.RWMutex
-	data map[string]interface{}
-}
 
 //LoadJsonConf 加载json静态配置数据
 //model：configs or data
@@ -64,20 +56,33 @@ func loadJsonFile(file string, v interface{}) error {
 	return err
 }
 
-// GetdataConf 数据
-func GetDataConf(key string) interface{} {
-
-	dataConf.mux.RLock()
-	defer dataConf.mux.RUnlock()
-
-	return dataConf.data[key]
+// GameConf 游戏策划配置
+type GameConf struct {
+	mux  sync.RWMutex
+	data map[string]interface{}
 }
 
-// Set 数据
-func SetDataConf(key string, v interface{}) {
+// NewGameConf 初始化
+func NewGameConf() *GameConf {
+	gameConf := new(GameConf)
+	gameConf.data = make(map[string]interface{})
+	return gameConf
+}
 
-	dataConf.mux.Lock()
-	defer dataConf.mux.Unlock()
+// GetConf 数据
+func (gameConf *GameConf) GetConf(key string) interface{} {
 
-	dataConf.data[key] = v
+	gameConf.mux.RLock()
+	defer gameConf.mux.RUnlock()
+
+	return gameConf.data[key]
+}
+
+// SetConf 数据
+func (gameConf *GameConf) SetConf(key string, v interface{}) {
+
+	gameConf.mux.Lock()
+	defer gameConf.mux.Unlock()
+
+	gameConf.data[key] = v
 }
