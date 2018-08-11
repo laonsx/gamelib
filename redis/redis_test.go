@@ -10,15 +10,7 @@ import (
 
 func init() {
 
-	InitRedis(Serializer, UnSerializer, NewRedisConf("main", "127.0.0.1", "6378", 0), NewRedisConf("main", "127.0.0.1", "6379", 64))
-}
-
-func Serializer(data interface{}) ([]byte, error) {
-	return codec.MsgPack(data)
-}
-
-func UnSerializer(data []byte, v interface{}) error {
-	return codec.UnMsgPack(data, v)
+	InitRedis(codec.MsgPack, codec.UnMsgPack, NewRedisConf("main", "127.0.0.1", "6378", 0), NewRedisConf("main", "127.0.0.1", "6379", 64))
 }
 
 func TestRedis_GetSet(t *testing.T) {

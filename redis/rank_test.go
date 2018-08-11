@@ -3,11 +3,13 @@ package redis
 import (
 	"strconv"
 	"testing"
+
+	"gamelib/codec"
 )
 
 func init() {
 
-	InitRedis(Serializer, UnSerializer, NewRedisConf("rank", "127.0.0.1", "6378", 0))
+	InitRedis(codec.MsgPack, codec.UnMsgPack, NewRedisConf("rank", "127.0.0.1", "6378", 0))
 }
 
 type TestRank struct {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"gamelib/codec"
 	"gamelib/gofunc"
 	"gamelib/task"
 )
@@ -13,7 +14,7 @@ func init() {
 
 	uinfoTask = task.New(32, syncUserInfoTask)
 
-	InitRedis(Serializer, UnSerializer, NewRedisConf("queue", "127.0.0.1", "6378", 0))
+	InitRedis(codec.MsgPack, codec.UnMsgPack, NewRedisConf("queue", "127.0.0.1", "6378", 0))
 
 	RegisterQueueHandler("SyncUserInfo", syncUserInfoHandle)
 }
