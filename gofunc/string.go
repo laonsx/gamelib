@@ -3,7 +3,6 @@ package gofunc
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"regexp"
 )
 
 //SubStr 截取字符串
