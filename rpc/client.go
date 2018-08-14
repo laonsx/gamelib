@@ -19,12 +19,11 @@ var (
 )
 
 // InitClient 初始化客户端
-func InitClient(name string, cluster map[string]string, services [][]string, opts []grpc.DialOption) {
+func InitClient(cluster map[string]string, services [][]string, opts []grpc.DialOption) {
 
 	client = new(Client)
 	client.clients = make(map[string]GameClient)
 	client.cluster = cluster
-	client.name = name
 
 	serviceMap := make(map[string]uint16)
 	servicesNumMap := make(map[uint16]string)
@@ -169,7 +168,6 @@ func Call(node string, service string, data []byte, session *Session) ([]byte, e
 
 // Client rpc Client结构
 type Client struct {
-	name           string
 	mux            sync.Mutex
 	clients        map[string]GameClient
 	cluster        map[string]string
