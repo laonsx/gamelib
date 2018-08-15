@@ -7,9 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"gamelib/server"
-
 	"github.com/gorilla/websocket"
+	"github.com/laonsx/gamelib/server"
 )
 
 var (

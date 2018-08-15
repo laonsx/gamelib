@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"gamelib/codec"
+	"github.com/laonsx/gamelib/codec"
 )
 
 func init() {

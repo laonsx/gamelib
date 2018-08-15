@@ -10,8 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"gamelib/gofunc"
-
+	"github.com/laonsx/gamelib/gofunc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -209,30 +208,30 @@ func RegisterService(v interface{}) error {
 }
 
 func suitableMethods(typ reflect.Type) map[string]reflect.Method {
-	
+
 	methods := make(map[string]reflect.Method)
 	for m := 0; m < typ.NumMethod(); m++ {
-	
+
 		method := typ.Method(m)
 		mtype := method.Type
 		mname := method.Name
 
 		if method.PkgPath != "" {
-		
+
 			continue
 		}
 
 		if mtype.NumOut() != 2 {
 
 			log.Println("method", mname, "has wrong number of outs:", mtype.NumOut())
-			
+
 			continue
 		}
 
 		if mtype.NumIn() != 3 {
 
 			log.Println("method", mname, "has wrong number of ins:", mtype.NumIn())
-			
+
 			continue
 		}
 

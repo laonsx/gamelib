@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"gamelib/codec"
+	"github.com/laonsx/gamelib/codec"
 )
 
 func init() {

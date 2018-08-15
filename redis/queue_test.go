@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"gamelib/codec"
-	"gamelib/gofunc"
-	"gamelib/task"
+	"github.com/laonsx/gamelib/codec"
+	"github.com/laonsx/gamelib/gofunc"
+	"github.com/laonsx/gamelib/task"
 )
 
 func init() {
