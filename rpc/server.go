@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -143,7 +144,7 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 			serv, ok := s.serviceMap[sname]
 			if !ok {
 
-				return errors.New("service not found")
+				return errors.New(fmt.Sprintf("rpcserver(%s): service(%s) not found", s.Name, sname))
 			}
 
 			if in.Session == nil {
@@ -154,15 +155,15 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 			resp, err := serv.handle(mname, in)
 			if err != nil {
 
-				log.Printf("rpcserver handle %v", err)
-				return err
+				//fmt.Sprintf("rpcserver(%s) handle %v", s.Name, err)
+				return errors.New(fmt.Sprintf("rpcserver(%s) handle %v", s.Name, err))
 			}
 
 			if err := stream.Send(resp); err != nil {
 
-				log.Printf("rpcserver streamsend, err=%s", err.Error())
+				//fmt.Sprintf("rpcserver(%s) streamsend, err=%v",s.Name, err)
 
-				return err
+				return errors.New(fmt.Sprintf("rpcserver(%s) streamsend, err=%v",s.Name, err))
 			}
 
 		case <-quit:
@@ -188,23 +189,18 @@ func RegisterService(v interface{}) error {
 	s.rcvr = reflect.ValueOf(v)
 	sname := reflect.Indirect(s.rcvr).Type().Name()
 	if sname == "" {
-
-		s := "rpc.Register: no service name for type " + s.typ.String()
-		log.Println(s)
-
-		return errors.New(s)
+		
+		panic("rpc.Register: no service name for type " + s.typ.String()))
 	}
 
 	if _, present := server.serviceMap[sname]; present {
 
-		return errors.New("rpc: service already defined: " + sname)
+		panic("rpc.Register: service already defined " + sname)
 	}
 
 	s.name = sname
 	s.method = suitableMethods(s.typ)
 	server.serviceMap[s.name] = s
-
-	return nil
 }
 
 func suitableMethods(typ reflect.Type) map[string]reflect.Method {
@@ -223,16 +219,12 @@ func suitableMethods(typ reflect.Type) map[string]reflect.Method {
 
 		if mtype.NumOut() != 2 {
 
-			log.Println("method", mname, "has wrong number of outs:", mtype.NumOut())
-
-			continue
+			panic("method " + mname + " has wrong number of outs: " + mtype.NumOut())
 		}
 
 		if mtype.NumIn() != 3 {
 
-			log.Println("method", mname, "has wrong number of ins:", mtype.NumIn())
-
-			continue
+			panic("method " + mname + " has wrong number of ins: " + mtype.NumIn())
 		}
 
 		methods[mname] = method
@@ -251,24 +243,16 @@ type service struct {
 //处理客户端发送的数据包
 func (s *service) handle(methodName string, in *GameMsg) (*GameMsg, error) {
 
-	defer gofunc.PrintPanic()
-
 	method, ok := s.method[methodName]
 	if !ok {
 
-		return nil, errors.New("method not found")
+		return nil, errors.New(fmt.Sprintf("method(%s) not found", methodName))
 	}
 
 	function := method.Func
 	rvs := []reflect.Value{s.rcvr, reflect.ValueOf(in.Msg), reflect.ValueOf(in.Session)}
 	ret := function.Call(rvs)
 	resp := ret[0].Bytes()
-	errInter := ret[1].Interface()
-
-	if errInter != nil {
-
-		return nil, errInter.(error)
-	}
 
 	return &GameMsg{ServiceName: in.ServiceName, Msg: resp}, nil
 }
