@@ -54,14 +54,14 @@ func (s *Server) Start() {
 
 	RegisterGameServer(grpcServer, s)
 
-	log.Printf("%s rpcserver listening on %s", s.Name, s.listener.Addr().String())
+	log.Printf("rpcserver(%s) listening on %s", s.Name, s.listener.Addr().String())
 	grpcServer.Serve(s.listener)
 }
 
 // Stop 停止rpc服务
 func (s *Server) Close() {
 
-	log.Printf("rpcserver closing")
+	log.Printf("rpcserver(%s) closing", s.Name)
 	s.grpcServer.Stop()
 }
 
