@@ -22,7 +22,7 @@ type Conn struct {
 	closeFlag     int32
 	closeCallback func(id uint64)
 	msgType       int
-	Err           error
+	err           error
 }
 
 func (c *Conn) Ping() func(string) error {
@@ -94,6 +94,11 @@ func (c *Conn) Close() error {
 	return nil
 }
 
+func (c *Conn) Error() error {
+
+	return c.err
+}
+
 func (c *Conn) IsClosed() bool {
 
 	return atomic.LoadInt32(&c.closeFlag) == 1
@@ -138,7 +143,7 @@ func (c *Conn) sendLoop() {
 			err := c.Send(msg)
 			if err != nil {
 
-				c.Err = errors.New(fmt.Sprintf("send wsconn id=%d err=%v", c.id, err))
+				c.err = errors.New(fmt.Sprintf("send wsconn id=%d err=%v", c.id, err))
 				c.Close()
 
 				return

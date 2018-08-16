@@ -1,8 +1,6 @@
 package ws
 
 import (
-	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -31,7 +29,6 @@ type Server struct {
 	quit    chan bool
 	config  *server.Config
 	conns   map[uint64]*Conn
-	err     error
 }
 
 func NewServer(name string, config *server.Config) server.GateServer {
@@ -155,7 +152,7 @@ func (server *Server) serveWs(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 
-		server.err = errors.New(fmt.Sprintf("ws upgrade err:%v", err))
+		log.Printf("ws upgrade err:%v", err)
 
 		return
 	}

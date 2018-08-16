@@ -34,6 +34,7 @@ type Conn interface {
 	SetMsgType(t int)
 	SetReadDeadline(t time.Duration)
 	RemoteAddr() net.Addr
+	Error() error
 }
 
 type Config struct {
