@@ -28,7 +28,7 @@ const SESSIONUID = "uid"
 
 // Server 对象
 type Server struct {
-	Name string
+	name string
 
 	listener   net.Listener
 	opts       []grpc.ServerOption
@@ -40,7 +40,7 @@ type Server struct {
 // NewServer 创建Server对象
 func NewServer(name string, lis net.Listener, opts []grpc.ServerOption) *Server {
 
-	server.Name = name
+	server.name = name
 	server.listener = lis
 	server.opts = opts
 	return server
@@ -54,14 +54,14 @@ func (s *Server) Start() {
 
 	RegisterGameServer(grpcServer, s)
 
-	log.Printf("rpcserver(%s) listening on %s", s.Name, s.listener.Addr().String())
+	log.Printf("rpcserver(%s) listening on %s", s.name, s.listener.Addr().String())
 	grpcServer.Serve(s.listener)
 }
 
 // Stop 停止rpc服务
 func (s *Server) Close() {
 
-	log.Printf("rpcserver(%s) closing", s.Name)
+	log.Printf("rpcserver(%s) closing", s.name)
 	s.grpcServer.Stop()
 }
 
@@ -80,7 +80,7 @@ func (s *Server) Call(ctx context.Context, in *GameMsg) (*GameMsg, error) {
 	resp, err := serv.handle(mname, in)
 	if err != nil {
 
-		err = errors.New(fmt.Sprintf("rpcserver(%s) handle %v", s.Name, err))
+		err = errors.New(fmt.Sprintf("rpcserver(%s) handle %v", s.name, err))
 	}
 
 	return resp, err
@@ -148,7 +148,7 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 
 			if !ok {
 
-				return errors.New(fmt.Sprintf("rpcserver(%s): service(%s) not found", s.Name, sname))
+				return errors.New(fmt.Sprintf("rpcserver(%s): service(%s) not found", s.name, sname))
 			}
 
 			if in.Session == nil {
@@ -159,12 +159,12 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 			resp, err := serv.handle(mname, in)
 			if err != nil {
 
-				return errors.New(fmt.Sprintf("rpcserver(%s) handle %v", s.Name, err))
+				return errors.New(fmt.Sprintf("rpcserver(%s) handle %v", s.name, err))
 			}
 
 			if err := stream.Send(resp); err != nil {
 
-				return errors.New(fmt.Sprintf("rpcserver(%s) streamsend, err=%v", s.Name, err))
+				return errors.New(fmt.Sprintf("rpcserver(%s) streamsend, err=%v", s.name, err))
 			}
 
 		case <-quit:
