@@ -116,9 +116,7 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 	md, ok := metadata.FromIncomingContext(stream.Context())
 	if !ok {
 
-		log.Println("rpcserver stream ctx err")
-
-		return errors.New("stream ctx error")
+		return errors.New("rpc.Stream: stream ctx error")
 	}
 
 	var session *Session
@@ -220,12 +218,12 @@ func suitableMethods(typ reflect.Type) map[string]reflect.Method {
 
 		if mtype.NumOut() != 1 {
 
-			panic(fmt.Sprintf("method %s has wrong number of outs: %d", mname, mtype.NumOut()))
+			panic(fmt.Sprintf("rpc.Register: method %s has wrong number of outs: %d", mname, mtype.NumOut()))
 		}
 
 		if mtype.NumIn() != 3 {
 
-			panic(fmt.Sprintf("method %s has wrong number of ins: %d", mname, mtype.NumIn()))
+			panic(fmt.Sprintf("rpc.Register: method %s has wrong number of ins: %d", mname, mtype.NumIn()))
 		}
 
 		methods[mname] = method
@@ -247,7 +245,7 @@ func (s *service) handle(methodName string, in *GameMsg) (*GameMsg, error) {
 	method, ok := s.method[methodName]
 	if !ok {
 
-		return nil, errors.New(fmt.Sprintf("method(%s) not found", methodName))
+		return nil, errors.New(fmt.Sprintf("rpc.handle: method(%s) not found", methodName))
 	}
 
 	function := method.Func
