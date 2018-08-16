@@ -9,8 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"app/config"
-
 	"github.com/gorilla/websocket"
 	"github.com/laonsx/gamelib/server"
 )
