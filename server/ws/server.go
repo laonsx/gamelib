@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"app/config"
+
 	"github.com/gorilla/websocket"
 	"github.com/laonsx/gamelib/server"
 )
@@ -34,9 +36,10 @@ type Server struct {
 	err     error
 }
 
-func NewServer(config *server.Config) server.GateServer {
+func NewServer(name string, config *server.Config) server.GateServer {
 
 	return &Server{
+		name:    name,
 		config:  config,
 		addr:    config.Addr,
 		maxConn: config.MaxConn,
