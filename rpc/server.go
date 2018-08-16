@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/laonsx/gamelib/gofunc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -79,6 +78,10 @@ func (s *Server) Call(ctx context.Context, in *GameMsg) (*GameMsg, error) {
 	}
 
 	resp, err := serv.handle(mname, in)
+	if err != nil {
+
+		err = errors.New(fmt.Sprintf("rpcserver(%s) handle %v", s.Name, err))
+	}
 
 	return resp, err
 }
@@ -142,6 +145,7 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 			sname := in.ServiceName[:dot]
 			mname := in.ServiceName[dot+1:]
 			serv, ok := s.serviceMap[sname]
+
 			if !ok {
 
 				return errors.New(fmt.Sprintf("rpcserver(%s): service(%s) not found", s.Name, sname))
@@ -155,15 +159,12 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 			resp, err := serv.handle(mname, in)
 			if err != nil {
 
-				//fmt.Sprintf("rpcserver(%s) handle %v", s.Name, err)
 				return errors.New(fmt.Sprintf("rpcserver(%s) handle %v", s.Name, err))
 			}
 
 			if err := stream.Send(resp); err != nil {
 
-				//fmt.Sprintf("rpcserver(%s) streamsend, err=%v",s.Name, err)
-
-				return errors.New(fmt.Sprintf("rpcserver(%s) streamsend, err=%v",s.Name, err))
+				return errors.New(fmt.Sprintf("rpcserver(%s) streamsend, err=%v", s.Name, err))
 			}
 
 		case <-quit:
@@ -174,7 +175,7 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 }
 
 // RegisterService 注册一个服务
-func RegisterService(v interface{}) error {
+func RegisterService(v interface{}) {
 
 	server.mux.Lock()
 	defer server.mux.Unlock()
@@ -189,8 +190,8 @@ func RegisterService(v interface{}) error {
 	s.rcvr = reflect.ValueOf(v)
 	sname := reflect.Indirect(s.rcvr).Type().Name()
 	if sname == "" {
-		
-		panic("rpc.Register: no service name for type " + s.typ.String()))
+
+		panic("rpc.Register: no service name for type " + s.typ.String())
 	}
 
 	if _, present := server.serviceMap[sname]; present {
@@ -217,14 +218,14 @@ func suitableMethods(typ reflect.Type) map[string]reflect.Method {
 			continue
 		}
 
-		if mtype.NumOut() != 2 {
+		if mtype.NumOut() != 1 {
 
-			panic("method " + mname + " has wrong number of outs: " + mtype.NumOut())
+			panic(fmt.Sprintf("method %s has wrong number of outs: %d", mname, mtype.NumOut()))
 		}
 
 		if mtype.NumIn() != 3 {
 
-			panic("method " + mname + " has wrong number of ins: " + mtype.NumIn())
+			panic(fmt.Sprintf("method %s has wrong number of ins: %d", mname, mtype.NumIn()))
 		}
 
 		methods[mname] = method

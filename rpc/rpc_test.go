@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"testing"
 
@@ -9,8 +10,8 @@ import (
 )
 
 var nodes map[string]string = map[string]string{
-	"node1": "127.0.0.1:9000",
-	"node2": "127.0.0.1:9000",
+	"node1": "127.0.0.1:10000",
+	"node2": "127.0.0.1:10000",
 }
 
 var methods [][]string = [][]string{
@@ -26,21 +27,21 @@ func init() {
 type TestRpc1 struct {
 }
 
-func (testRpc *TestRpc1) HelloWorld1(data []byte, session *Session) ([]byte, error) {
+func (testRpc *TestRpc1) HelloWorld1(data []byte, session *Session) []byte {
 
 	fmt.Println("request data:", string(data), ";session:", session)
 
-	return []byte("return from testrpc1 helloworld1."), nil
+	return []byte("return from testrpc1 helloworld1.")
 }
 
 type TestRpc2 struct {
 }
 
-func (testRpc *TestRpc2) HelloWorld2(data []byte, session *Session) ([]byte, error) {
+func (testRpc *TestRpc2) HelloWorld2(data []byte, session *Session) []byte {
 
 	fmt.Println("request data......:", string(data), ";session:", session)
 
-	return []byte("return from testrpc2 helloworld2......"), nil
+	return []byte("return from testrpc2 helloworld2......")
 
 }
 
@@ -48,7 +49,7 @@ func TestRpc_GetName(t *testing.T) {
 
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
-	InitClient("test", nodes, methods, opts)
+	InitClient(nodes, methods, opts)
 
 	nname, sname, err := GetName(uint16(1001))
 	t.Log(nname, sname, err)
@@ -58,10 +59,10 @@ func TestRpc(t *testing.T) {
 
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
-	InitClient("test", nodes, methods, opts)
+	InitClient(nodes, methods, opts)
 
 	var serverOpts []grpc.ServerOption
-	lis, err := net.Listen("tcp", "127.0.0.1:9000")
+	lis, err := net.Listen("tcp", "127.0.0.1:10000")
 	if err != nil {
 		panic(err)
 	}
@@ -117,24 +118,54 @@ func TestRpc(t *testing.T) {
 	}
 
 	in = &GameMsg{
-		ServiceName: "TestRpc1.HelloWorld1",
+		ServiceName: "TestRpc1.HelloWorld3",
 		Msg:         []byte("hello world,no session"),
 	}
-	stream.Send(in)
+	err = stream.Send(in)
+	if err != nil {
+
+		t.Error(".------------.", err)
+	}
+
 	result, err = stream.Recv()
 	if err != nil {
+
+		t.Error("..............", err)
+		err = nil
+	}
+
+	t.Log(result)
+
+	ins := &GameMsg{
+		ServiceName: "TestRpc1.HelloWorld1",
+		Msg:         []byte("hello world,no session,but set session"),
+		Session:     &Session{Uid: uint64(1234567890)},
+	}
+	err = stream.Send(ins)
+	if err != nil {
+
+		if err == io.EOF {
+
+			stream.CloseSend()
+			stream, err = Stream("node2", nil)
+			if err != nil {
+
+				t.Error("reset..rpc..stream", err)
+			}
+
+			t.Log("resend err=", stream.Send(ins))
+		}
+		t.Error(".------------.", err)
+	}
+
+	result, errs := stream.Recv()
+	if errs != nil {
 
 		t.Error(err)
 	}
 
 	t.Log(result)
 
-	in = &GameMsg{
-		ServiceName: "TestRpc1.HelloWorld1",
-		Msg:         []byte("hello world,no session,but set session"),
-		Session:     &Session{Uid: uint64(1234567890)},
-	}
-	stream.Send(in)
 	result, err = stream.Recv()
 	if err != nil {
 
