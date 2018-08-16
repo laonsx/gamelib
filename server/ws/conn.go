@@ -2,7 +2,7 @@ package ws
 
 import (
 	"errors"
-	"log"
+	"fmt"
 	"net"
 	"sync/atomic"
 	"time"
@@ -22,6 +22,7 @@ type Conn struct {
 	closeFlag     int32
 	closeCallback func(id uint64)
 	msgType       int
+	Err           error
 }
 
 func (c *Conn) Ping() func(string) error {
@@ -137,7 +138,7 @@ func (c *Conn) sendLoop() {
 			err := c.Send(msg)
 			if err != nil {
 
-				log.Printf("send wsconn id=%d err=%v", c.id, err)
+				c.Err = errors.New(fmt.Sprintf("send wsconn id=%d err=%v", c.id, err))
 				c.Close()
 
 				return

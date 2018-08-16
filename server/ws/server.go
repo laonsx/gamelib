@@ -1,6 +1,8 @@
 package ws
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -20,6 +22,7 @@ var (
 )
 
 type Server struct {
+	name    string
 	id      uint64
 	mux     sync.Mutex
 	handler server.Handler
@@ -28,6 +31,7 @@ type Server struct {
 	quit    chan bool
 	config  *server.Config
 	conns   map[uint64]*Conn
+	err     error
 }
 
 func NewServer(config *server.Config) server.GateServer {
@@ -55,7 +59,7 @@ func (server *Server) Start() {
 
 	go func() {
 
-		log.Println("websocket listening on", server.addr)
+		log.Printf("websocket(%s) listening on %s", server.name, server.addr)
 
 		http.HandleFunc("/", server.serveWs)
 		http.HandleFunc("/ws", server.serveWs)
@@ -72,7 +76,7 @@ func (server *Server) Start() {
 
 func (server *Server) Close() {
 
-	log.Println("websocket closing")
+	log.Printf("websocket(%s) closing", server.name)
 
 	close(server.quit)
 
@@ -150,7 +154,7 @@ func (server *Server) serveWs(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 
-		log.Println(err)
+		server.err = errors.New(fmt.Sprintf("ws upgrade err:%v", err))
 
 		return
 	}
