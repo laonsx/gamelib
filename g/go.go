@@ -8,13 +8,12 @@ var (
 	mux       sync.Mutex
 	pending   int
 	quit      chan struct{}
-	waitGroup *sync.WaitGroup
+	waitGroup sync.WaitGroup
 )
 
 func init() {
 
 	quit = make(chan struct{})
-	waitGroup = new(sync.WaitGroup)
 }
 
 func Go(f func()) {
