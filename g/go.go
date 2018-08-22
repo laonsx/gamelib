@@ -5,8 +5,8 @@ import (
 )
 
 var (
-	mux       sync.Mutex
-	pending   int
+//	mux       sync.Mutex
+//	pending   int
 	quit      chan struct{}
 	waitGroup sync.WaitGroup
 )
@@ -39,14 +39,14 @@ func run(f func()) {
 	defer func() {
 
 		waitGroup.Done()
-		mux.Lock()
-		pending--
-		mux.Unlock()
+//		mux.Lock()
+//		pending--
+//		mux.Unlock()
 	}()
 
-	mux.Lock()
-	pending++
-	mux.Unlock()
+//	mux.Lock()
+//	pending++
+//	mux.Unlock()
 
 	for {
 
