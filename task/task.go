@@ -9,7 +9,7 @@ import (
 type Task struct {
 	workerPool chan worker
 	mux        sync.Mutex
-	wg         *sync.WaitGroup
+	wg         sync.WaitGroup
 	closed     bool
 	quit       chan struct{}
 	callback   func(v interface{})
@@ -23,7 +23,6 @@ func New(n int, callback func(v interface{})) *Task {
 	t.workerPool = make(chan worker, n)
 	t.callback = callback
 	t.quit = make(chan struct{})
-	t.wg = new(sync.WaitGroup)
 
 	for i := 0; i < n; i++ {
 
