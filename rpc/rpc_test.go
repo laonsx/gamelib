@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"fmt"
-	"io"
 	"net"
 	"testing"
 
@@ -15,7 +14,7 @@ var nodes map[string]string = map[string]string{
 }
 
 var methods [][]string = [][]string{
-	[]string{"1001", "TestRpc1.HelloWorld1", "node1"},
+	[]string{"1001", "TestRpc1.HelloWorld1"},
 }
 
 func init() {
@@ -51,8 +50,8 @@ func TestRpc_GetName(t *testing.T) {
 	opts = append(opts, grpc.WithInsecure())
 	InitClient(nodes, methods, opts)
 
-	nname, sname, err := GetName(uint16(1001))
-	t.Log(nname, sname, err)
+	sname, err := GetName(uint16(1001))
+	t.Log(sname, err)
 }
 
 func TestRpc(t *testing.T) {
@@ -118,7 +117,7 @@ func TestRpc(t *testing.T) {
 	}
 
 	in = &GameMsg{
-		ServiceName: "TestRpc1.HelloWorld3",
+		ServiceName: "TestRpc1.HelloWorld1",
 		Msg:         []byte("hello world,no session"),
 	}
 	err = stream.Send(in)
@@ -136,49 +135,49 @@ func TestRpc(t *testing.T) {
 
 	t.Log(result)
 
-	ins := &GameMsg{
-		ServiceName: "TestRpc1.HelloWorld1",
-		Msg:         []byte("hello world,no session,but set session"),
-		Session:     &Session{Uid: uint64(1234567890)},
-	}
-	err = stream.Send(ins)
-	if err != nil {
-
-		if err == io.EOF {
-
-			stream.CloseSend()
-			stream, err = Stream("node2", nil)
-			if err != nil {
-
-				t.Error("reset..rpc..stream", err)
-			}
-
-			t.Log("resend err=", stream.Send(ins))
-		}
-		t.Error(".------------.", err)
-	}
-
-	result, errs := stream.Recv()
-	if errs != nil {
-
-		t.Error(err)
-	}
-
-	t.Log(result)
-
-	result, err = stream.Recv()
-	if err != nil {
-
-		t.Error(err)
-	}
-
-	t.Log(result)
-
-	resp, err = Call("node1", "TestRpc2.HelloWorld2", []byte("ahahahhahaha"), &Session{Uid: uint64(10000001)})
-	if err != nil {
-
-		t.Error(err)
-	}
-
-	t.Log(string(resp))
+	//ins := &GameMsg{
+	//	ServiceName: "TestRpc1.HelloWorld1",
+	//	Msg:         []byte("hello world,no session,but set session"),
+	//	Session:     &Session{Uid: uint64(1234567890)},
+	//}
+	//err = stream.Send(ins)
+	//if err != nil {
+	//
+	//	if err == io.EOF {
+	//
+	//		stream.CloseSend()
+	//		stream, err = Stream("node2", nil)
+	//		if err != nil {
+	//
+	//			t.Error("reset..rpc..stream", err)
+	//		}
+	//
+	//		t.Log("resend err=", stream.Send(ins))
+	//	}
+	//	t.Error(".------------.", err)
+	//}
+	//
+	//result, errs := stream.Recv()
+	//if errs != nil {
+	//
+	//	t.Error(err)
+	//}
+	//
+	//t.Log(result)
+	//
+	//result, err = stream.Recv()
+	//if err != nil {
+	//
+	//	t.Error(err)
+	//}
+	//
+	//t.Log(result)
+	//
+	//resp, err = Call("node1", "TestRpc2.HelloWorld2", []byte("ahahahhahaha"), &Session{Uid: uint64(10000001)})
+	//if err != nil {
+	//
+	//	t.Error(err)
+	//}
+	//
+	//t.Log(string(resp))
 }
