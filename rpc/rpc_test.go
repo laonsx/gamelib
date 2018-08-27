@@ -68,7 +68,7 @@ func TestRpc(t *testing.T) {
 	rpcServer := NewServer("node1", lis, serverOpts)
 	go rpcServer.Start()
 
-	stream, err := Stream("node1", map[string]string{SESSIONUID: "123321123321"})
+	stream, _, err := Stream("node1", map[string]string{SESSIONUID: "123321123321"})
 	if err != nil {
 
 		t.Error(err)
@@ -110,7 +110,7 @@ func TestRpc(t *testing.T) {
 
 	t.Log(result)
 
-	stream, err = Stream("node2", nil)
+	stream, _, err = Stream("node2", nil)
 	if err != nil {
 
 		t.Error(err)
