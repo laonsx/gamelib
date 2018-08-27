@@ -91,14 +91,14 @@ func GetPNum(service string) (pnum uint16, err error) {
 }
 
 // Stream 获取一个流
-func Stream(node string, md map[string]string) (Game_StreamClient, error) {
+func Stream(node string, md map[string]string) (*grpc.ClientConn, Game_StreamClient, error) {
 
 	var c GameClient
 
-	c, err := client.newClient(node)
+	conn, c, err := client.newStreamClient(node)
 	if err != nil {
 
-		return nil, err
+		return nil, nil, err
 	}
 
 	var ctx = context.Background()
@@ -109,7 +109,28 @@ func Stream(node string, md map[string]string) (Game_StreamClient, error) {
 
 	stream, err := c.Stream(ctx)
 
-	return stream, err
+	return conn, stream, err
+}
+
+func (c *Client) newStreamClient(node string) (*grpc.ClientConn, GameClient, error) {
+
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	if addr, ok := c.cluster[node]; ok {
+
+		conn, err := grpc.Dial(addr, c.opts...)
+		if err != nil {
+
+			return nil, nil, err
+		}
+
+		gameClient := NewGameClient(conn)
+
+		return conn, gameClient, nil
+	}
+
+	return nil, nil, errors.New("node conf not found")
 }
 
 //func StreamCall(node string, service string, data []byte, session *Session) ([]byte, error) {
