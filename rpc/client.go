@@ -124,7 +124,7 @@ func StreamCall(node string, service string, data []byte, session *Session) ([]b
 
 	var err error
 
-	if !ok {
+	if !ok || streamCache.stream == nil {
 
 		streamCache = &StreamClientCache{}
 		streamCache.stream, streamCache.cancel, err = Stream(node, nil)
@@ -136,11 +136,6 @@ func StreamCall(node string, service string, data []byte, session *Session) ([]b
 		mux.Lock()
 		streamClientCaches[node] = streamCache
 		mux.Unlock()
-	}
-
-	if streamCache.stream == nil {
-
-		return nil, errors.New(node + " streamcache.stream nil")
 	}
 
 	err = streamCache.stream.Send(&GameMsg{ServiceName: service, Msg: data, Session: session})
