@@ -138,6 +138,11 @@ func StreamCall(node string, service string, data []byte, session *Session) ([]b
 		mux.Unlock()
 	}
 
+	if streamCache.stream == nil {
+
+		return nil, errors.New(node + " streamcache.stream nil")
+	}
+
 	err = streamCache.stream.Send(&GameMsg{ServiceName: service, Msg: data, Session: session})
 	if err == io.EOF {
 
