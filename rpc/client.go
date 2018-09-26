@@ -122,23 +122,23 @@ func StreamCall(node string, service string, data []byte, session *Session) ([]b
 	streamCache, ok := streamClientCaches[node]
 	mux.RUnlock()
 
+	var err error
+
 	if !ok {
 
-		stream, cancel, err := Stream(node, nil)
+		streamCache = &StreamClientCache{}
+		streamCache.stream, streamCache.cancel, err = Stream(node, nil)
 		if err != nil {
 
 			return nil, err
 		}
 
 		mux.Lock()
-		streamClientCaches[node] = &StreamClientCache{
-			stream: stream,
-			cancel: cancel,
-		}
+		streamClientCaches[node] = streamCache
 		mux.Unlock()
 	}
 
-	err := streamCache.stream.Send(&GameMsg{ServiceName: service, Msg: data, Session: session})
+	err = streamCache.stream.Send(&GameMsg{ServiceName: service, Msg: data, Session: session})
 	if err == io.EOF {
 
 		streamCache.stream.CloseSend()
