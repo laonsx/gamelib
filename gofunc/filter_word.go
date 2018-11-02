@@ -27,8 +27,7 @@ func FilterWord(str string, replace bool) (bool, string) {
 
 			for _, kw := range gw.list {
 
-				a := rs[i:]
-				if strings.Contains(string(a), kw) {
+				if strings.Contains(string(rs[i:]), kw) {
 
 					iskw = false
 
