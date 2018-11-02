@@ -18,7 +18,7 @@ var filterWordMap map[rune]*groupWords
 //返回 （是否有关键词 过滤后的字符串）
 func FilterWord(str string, replace bool) (bool, string) {
 
-	iskw := true
+	var iskw bool
 	rs := []rune(str)
 
 	for i, v := range rs {
@@ -29,7 +29,7 @@ func FilterWord(str string, replace bool) (bool, string) {
 
 				if strings.Contains(string(rs[i:]), kw) {
 
-					iskw = false
+					iskw = true
 
 					if replace {
 
