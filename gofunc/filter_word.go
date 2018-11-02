@@ -23,22 +23,27 @@ func FilterWord(str string, replace bool) (bool, string) {
 
 	for i, v := range rs {
 
-		if gw, ok := filterWordMap[v]; ok {
+		gw, ok := filterWordMap[v]
+		if !ok {
 
-			for _, kw := range gw.list {
+			continue
+		}
 
-				if strings.Contains(string(rs[i:]), kw) {
+		for _, kw := range gw.list {
 
-					iskw = true
+			if !strings.Contains(string(rs[i:]), kw) {
 
-					if replace {
+				continue
+			}
 
-						str = strings.Replace(str, kw, "**", 2)
-					} else {
+			iskw = true
 
-						return iskw, str
-					}
-				}
+			if replace {
+
+				str = strings.Replace(str, kw, "**", 2)
+			} else {
+
+				return iskw, str
 			}
 		}
 	}
