@@ -34,7 +34,7 @@ func New(n int, callback func(v interface{})) *Task {
 }
 
 //Send 发送数据
-func (t *Task) Send(v interface{}) error {
+func (t *Task) SendMsg(v interface{}) error {
 
 	if t.closed {
 
@@ -44,7 +44,23 @@ func (t *Task) Send(v interface{}) error {
 	t.wg.Add(1)
 
 	w := t.get()
-	w.send(v)
+	w.sendMsg(v)
+
+	return nil
+}
+
+//SendFn 发送任务
+func (t *Task) SendFn(fn func()) error {
+
+	if t.closed {
+
+		return errors.New("closed")
+	}
+
+	t.wg.Add(1)
+
+	w := t.get()
+	w.sendFn(fn)
 
 	return nil
 }
@@ -73,6 +89,7 @@ func (t *Task) put(w worker) {
 type worker struct {
 	task    *Task
 	msgChan chan interface{}
+	fnChan  chan func()
 }
 
 func newWorker(task *Task) worker {
@@ -80,6 +97,7 @@ func newWorker(task *Task) worker {
 	return worker{
 		task:    task,
 		msgChan: make(chan interface{}),
+		fnChan:  make(chan func()),
 	}
 }
 
@@ -98,6 +116,11 @@ func (w worker) start() {
 				w.task.callback(msg)
 				w.done()
 
+			case fn := <-w.fnChan:
+
+				fn()
+				w.done()
+
 			case <-w.task.quit:
 
 				return
@@ -106,9 +129,14 @@ func (w worker) start() {
 	}()
 }
 
-func (w worker) send(v interface{}) {
+func (w worker) sendMsg(v interface{}) {
 
 	w.msgChan <- v
+}
+
+func (w worker) sendFn(fn func()) {
+
+	w.fnChan <- fn
 }
 
 func (w worker) done() {
