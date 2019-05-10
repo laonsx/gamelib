@@ -7,18 +7,40 @@ import (
 
 func TestTask_Run(t *testing.T) {
 
-	task := New(32, func(v interface{}) {
+	task := New(4, func(v interface{}) {
 
 		num := v.(int)
-		fmt.Println("deal :", 1000+num)
+		fmt.Println("deal :", 1000000+num)
 
 	})
 	defer task.Close()
 
 	for i := 0; i < 100; i++ {
 
-		task.Send(i)
-		fmt.Println("send :", i)
+		if i%2 == 0 {
+
+			err := task.SendMsg(i)
+			if err != nil {
+
+				fmt.Println("task sendMsg err", err)
+			}
+
+			fmt.Println("send :", i)
+		} else {
+
+			err := task.SendFn(func() {
+
+				fmt.Println("100fn")
+			})
+
+			if err != nil {
+
+				fmt.Println("task sendFn err", err)
+			}
+
+			fmt.Println("sendfn :", i)
+		}
+
 	}
 
 	task.Wait()
