@@ -1009,6 +1009,108 @@ func (r *Redis) Llen(key string) (int64, error) {
 	return data.(int64), err
 }
 
+func (r *Redis) Expire(key string, expire int64) error {
+
+	conn := r.rp.Get()
+	defer conn.Close()
+
+	ok, err := redis.Int64(redis.Int64(conn.Do("EXPIRE", key, expire)))
+	if err != nil || ok == 0 {
+
+		return KeyNotHave
+	}
+
+	return nil
+}
+
+func (r *Redis) Exists(key string) error {
+
+	conn := r.rp.Get()
+	defer conn.Close()
+
+	ok, err := redis.Int64(redis.Int64(conn.Do("Exists", key)))
+	if err != nil || ok == 0 {
+
+		return KeyNotHave
+	}
+
+	return nil
+}
+
+func (r *Redis) Ttl(key string) (int64, error) {
+
+	var conn redis.Conn
+	var ok interface{}
+	var err error
+
+	for i := 0; i < 2; i++ {
+
+		conn = r.rp.Get()
+		ok, err = conn.Do("TTL", key)
+		_ = conn.Close()
+		if err == nil {
+
+			break
+		}
+
+		time.Sleep(time.Duration(10) * time.Millisecond)
+	}
+	if ok == nil {
+
+		return 0, nil
+	}
+
+	return redis.Int64(ok, err)
+}
+
+func (r *Redis) Lock(key string, value, expire int64) (bool, error) {
+
+	conn := r.rp.Get()
+	defer conn.Close()
+
+	_, err := redis.String(conn.Do("SET", key, value, "EX", expire, "NX"))
+	if err == redis.ErrNil {
+
+		return false, nil
+	}
+
+	if err != nil {
+
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (r *Redis) CheckLock(key string) (int64, error) {
+
+	conn := r.rp.Get()
+	defer conn.Close()
+
+	data, err := conn.Do("Get", key)
+	if err != nil {
+
+		return 0, err
+	}
+
+	if data == nil {
+
+		return 0, err
+	}
+
+	return redis.Int64(data, err)
+}
+
+func (r *Redis) Unlock(key string) (err error) {
+
+	conn := r.rp.Get()
+	defer conn.Close()
+
+	_, err = conn.Do("del", key)
+
+	return
+}
+
 func hash(id uint64) int {
 
 	return int(id % uint64(128))
