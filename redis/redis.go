@@ -1063,12 +1063,12 @@ func (r *Redis) Ttl(key string) (int64, error) {
 	return redis.Int64(ok, err)
 }
 
-func (r *Redis) Lock(key string, value, expire int64) (bool, error) {
+func (r *Redis) Lock(lockKey, valueTag string, expire int64) (bool, error) {
 
 	conn := r.rp.Get()
 	defer conn.Close()
 
-	_, err := redis.String(conn.Do("SET", key, value, "EX", expire, "NX"))
+	_, err := redis.String(conn.Do("SET", lockKey, valueTag, "EX", expire, "NX"))
 	if err == redis.ErrNil {
 
 		return false, nil
@@ -1082,33 +1082,32 @@ func (r *Redis) Lock(key string, value, expire int64) (bool, error) {
 	return true, nil
 }
 
-func (r *Redis) CheckLock(key string) (int64, error) {
+var unlockLuaScript = redis.NewScript(2, `
+if redis.call("get", KEYS[1]) == KEYS[2]
+then
+	redis.call("del",KEYS[1])
+	return true
+end
+return false
+`)
+
+func (r *Redis) Unlock(lockKey, valueTag string) (bool, error) {
 
 	conn := r.rp.Get()
 	defer conn.Close()
 
-	data, err := conn.Do("Get", key)
+	data, err := redis.Bool(unlockLuaScript.Do(conn, lockKey, valueTag))
+	if err == redis.ErrNil {
+
+		return false, nil
+	}
+
 	if err != nil {
 
-		return 0, err
+		return false, err
 	}
 
-	if data == nil {
-
-		return 0, err
-	}
-
-	return redis.Int64(data, err)
-}
-
-func (r *Redis) Unlock(key string) (err error) {
-
-	conn := r.rp.Get()
-	defer conn.Close()
-
-	_, err = conn.Do("del", key)
-
-	return
+	return data, nil
 }
 
 func hash(id uint64) int {
