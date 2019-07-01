@@ -1110,6 +1110,60 @@ func (r *Redis) Unlock(lockKey, valueTag string) (bool, error) {
 	return data, nil
 }
 
+type Command struct {
+	Cmd    string
+	Args   []interface{}
+	Err    error
+	Result interface{}
+}
+
+type PipeLine struct {
+	commands []*Command
+	RunErr   error
+}
+
+func (pipe *PipeLine) Append(cmd string, args ...interface{}) {
+	pipe.commands = append(pipe.commands, &Command{Cmd: cmd, Args: args})
+}
+
+func (r *Redis) RunPipeLine(pipe *PipeLine) bool {
+
+	conn := r.rp.Get()
+	defer conn.Close()
+
+	var err error
+	for _, value := range pipe.commands {
+
+		err = conn.Send(value.Cmd, value.Args...)
+		if err != nil {
+
+			pipe.RunErr = err
+
+			return false
+		}
+	}
+
+	err = conn.Flush()
+	if err != nil {
+
+		pipe.RunErr = err
+
+		return false
+	}
+
+	ok := true
+	for _, value := range pipe.commands {
+
+		value.Result, value.Err = conn.Receive()
+		if value.Err != nil {
+
+			ok = false
+		}
+	}
+
+	return ok
+}
+
 func hash(id uint64) int {
 
 	return int(id % uint64(128))
