@@ -1118,12 +1118,12 @@ type Command struct {
 }
 
 type PipeLine struct {
-	commands []*Command
+	Commands []*Command
 	RunErr   error
 }
 
 func (pipe *PipeLine) Append(cmd string, args ...interface{}) {
-	pipe.commands = append(pipe.commands, &Command{Cmd: cmd, Args: args})
+	pipe.Commands = append(pipe.Commands, &Command{Cmd: cmd, Args: args})
 }
 
 func (r *Redis) RunPipeLine(pipe *PipeLine) bool {
@@ -1132,7 +1132,7 @@ func (r *Redis) RunPipeLine(pipe *PipeLine) bool {
 	defer conn.Close()
 
 	var err error
-	for _, value := range pipe.commands {
+	for _, value := range pipe.Commands {
 
 		err = conn.Send(value.Cmd, value.Args...)
 		if err != nil {
@@ -1152,7 +1152,7 @@ func (r *Redis) RunPipeLine(pipe *PipeLine) bool {
 	}
 
 	ok := true
-	for _, value := range pipe.commands {
+	for _, value := range pipe.Commands {
 
 		value.Result, value.Err = conn.Receive()
 		if value.Err != nil {
