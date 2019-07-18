@@ -1,6 +1,7 @@
 package gofunc
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"time"
@@ -32,7 +33,7 @@ func RandInt(n int, v ...int) (i int) {
 /**
 返回浮点随机数
 */
-func Randfloat(min, max float64) float64 {
+func RandFloat(min, max float64) float64 {
 
 	randNo := rand.Float64()*(max-min) + min
 	i, f := math.Modf(randNo * 100)
@@ -126,4 +127,22 @@ func ShuffleStr(src []string) []string {
 	}
 
 	return dest
+}
+
+var (
+	bytesArray = []byte("0123456789abcdefghijklmnopqrstuvwxyz")
+	bytesLen   = 36
+)
+
+func RandString(seed string) string {
+
+	result := []byte{}
+	for i := 0; i < 9; i++ {
+
+		result = append(result, bytesArray[rand.Intn(bytesLen)])
+	}
+
+	var base = fmt.Sprintf("%s%d%d", seed, time.Now().UnixNano(), rand.Int())
+
+	return string(result) + MD5(base)
 }
