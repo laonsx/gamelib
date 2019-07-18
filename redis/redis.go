@@ -1149,18 +1149,13 @@ func (r *Redis) Ttl(key string) (int64, error) {
 	return redis.Int64(ok, err)
 }
 
-func (r *Redis) Lock(lockKey, valueTag string, expire int64) (bool, error) {
+func (r *Redis) Lock(lockKey string, valueTag interface{}, expire int64) (bool, error) {
 
 	conn := r.rp.Get()
 	defer conn.Close()
 
-	_, err := redis.String(conn.Do("SET", lockKey, valueTag, "EX", expire, "NX"))
-	if err == redis.ErrNil {
-
-		return false, nil
-	}
-
-	if err != nil {
+	ok, err := redis.String(conn.Do("SET", lockKey, valueTag, "EX", expire, "NX"))
+	if err != nil || ok != "OK" {
 
 		return false, err
 	}
@@ -1177,23 +1172,12 @@ end
 return false
 `)
 
-func (r *Redis) Unlock(lockKey, valueTag string) (bool, error) {
+func (r *Redis) Unlock(lockKey string, valueTag interface{}) (bool, error) {
 
 	conn := r.rp.Get()
 	defer conn.Close()
 
-	data, err := redis.Bool(unlockLuaScript.Do(conn, lockKey, valueTag))
-	if err == redis.ErrNil {
-
-		return false, nil
-	}
-
-	if err != nil {
-
-		return false, err
-	}
-
-	return data, nil
+	return redis.Bool(unlockLuaScript.Do(conn, lockKey, valueTag))
 }
 
 type Command struct {
