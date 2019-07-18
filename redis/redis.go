@@ -409,6 +409,11 @@ func (r *Redis) ToStrings(value interface{}, err error) ([]string, error) {
 	return redis.Strings(value, err)
 }
 
+func (r *Redis) ToInt64s(value interface{}, err error) ([]int64, error) {
+
+	return redis.Int64s(value, err)
+}
+
 func (r *Redis) ToString(value interface{}, err error) (string, error) {
 
 	return redis.String(value, err)
@@ -1009,32 +1014,113 @@ func (r *Redis) Llen(key string) (int64, error) {
 	return data.(int64), err
 }
 
-func (r *Redis) Expire(key string, expire int64) error {
+func (r *Redis) Sadd(key string, members ...interface{}) error {
 
-	conn := r.rp.Get()
-	defer conn.Close()
+	var conn redis.Conn
+	var err error
 
-	ok, err := redis.Int64(redis.Int64(conn.Do("EXPIRE", key, expire)))
-	if err != nil || ok == 0 {
+	args := make([]interface{}, len(members)+1)
+	args[0] = key
+	copy(args[1:], members)
 
-		return KeyNotHave
+	for i := 0; i < 2; i++ {
+
+		conn = r.rp.Get()
+		_, err = conn.Do("SADD", args...)
+		conn.Close()
+
+		if err == nil {
+
+			break
+		}
+
+		time.Sleep(time.Duration(10) * time.Millisecond)
 	}
 
-	return nil
+	return err
 }
 
-func (r *Redis) Exists(key string) error {
+func (r *Redis) Sismember(key string, member interface{}) (data bool, err error) {
 
-	conn := r.rp.Get()
-	defer conn.Close()
+	var conn redis.Conn
 
-	ok, err := redis.Int64(redis.Int64(conn.Do("Exists", key)))
-	if err != nil || ok == 0 {
+	for i := 0; i < 2; i++ {
 
-		return KeyNotHave
+		conn = r.rp.Get()
+		data, err = redis.Bool(conn.Do("SISMEMBER", key, member))
+		conn.Close()
+
+		if err == nil {
+
+			break
+		}
+
+		time.Sleep(time.Duration(10) * time.Millisecond)
 	}
 
-	return nil
+	return
+}
+
+func (r *Redis) Smembers(key string) (data interface{}, err error) {
+
+	var conn redis.Conn
+
+	for i := 0; i < 2; i++ {
+
+		conn = r.rp.Get()
+		data, err = conn.Do("SMEMBERS", key)
+		conn.Close()
+
+		if err == nil {
+
+			break
+		}
+
+		time.Sleep(time.Duration(10) * time.Millisecond)
+	}
+
+	return
+}
+
+func (r *Redis) Expire(key string, expire int64) (exists bool, err error) {
+
+	var conn redis.Conn
+
+	for i := 0; i < 2; i++ {
+
+		conn = r.rp.Get()
+		exists, err = redis.Bool(conn.Do("EXPIRE", key, expire))
+		conn.Close()
+
+		if err == nil {
+			break
+		}
+
+		time.Sleep(time.Duration(10) * time.Millisecond)
+	}
+
+	return
+}
+
+func (r *Redis) Exists(key string) (ok bool, err error) {
+
+	var conn redis.Conn
+
+	for i := 0; i < 2; i++ {
+
+		conn = r.rp.Get()
+		ok, err = redis.Bool(conn.Do("Exists", key))
+		conn.Close()
+
+		if err == nil {
+
+			break
+		}
+
+		time.Sleep(time.Duration(10) * time.Millisecond)
+	}
+
+	return
 }
 
 func (r *Redis) Ttl(key string) (int64, error) {
