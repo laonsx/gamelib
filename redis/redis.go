@@ -414,6 +414,11 @@ func (r *Redis) ToInt64s(value interface{}, err error) ([]int64, error) {
 	return redis.Int64s(value, err)
 }
 
+func (r *Redis) ToInts(value interface{}, err error) ([]int, error) {
+
+	return redis.Ints(value, err)
+}
+
 func (r *Redis) ToString(value interface{}, err error) (string, error) {
 
 	return redis.String(value, err)
@@ -1069,6 +1074,27 @@ func (r *Redis) Smembers(key string) (data interface{}, err error) {
 
 		conn = r.rp.Get()
 		data, err = conn.Do("SMEMBERS", key)
+		conn.Close()
+
+		if err == nil {
+
+			break
+		}
+
+		time.Sleep(time.Duration(10) * time.Millisecond)
+	}
+
+	return
+}
+
+func (r *Redis) Sdiff(key1, key2 string) (data interface{}, err error) {
+
+	var conn redis.Conn
+
+	for i := 0; i < 2; i++ {
+
+		conn = r.rp.Get()
+		data, err = conn.Do("SDIFF", key1, key2)
 		conn.Close()
 
 		if err == nil {
