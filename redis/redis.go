@@ -1213,13 +1213,34 @@ type Command struct {
 	Result interface{}
 }
 
+func (c *Command) ResultValue(result interface{}) error {
+	return Decode(c.Result, result)
+}
+
 type PipeLine struct {
 	Commands []*Command
 	RunErr   error
 }
 
-func (pipe *PipeLine) Append(cmd string, args ...interface{}) {
+func (pipe *PipeLine) Append(cmd string, args ...interface{}) (err error) {
+
+	for i, v := range args {
+
+		if i == 0 {
+
+			continue
+		}
+
+		args[i], err = Encode(v)
+		if err != nil {
+
+			return
+		}
+	}
+
 	pipe.Commands = append(pipe.Commands, &Command{Cmd: cmd, Args: args})
+
+	return
 }
 
 func (r *Redis) RunPipeLine(pipe *PipeLine) bool {
