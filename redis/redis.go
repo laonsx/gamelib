@@ -1211,6 +1211,8 @@ type Command struct {
 	Args   []interface{}
 	Err    error
 	Result interface{}
+
+	rArgs []interface{}
 }
 
 func (c *Command) ResultValue(result interface{}) error {
@@ -1224,21 +1226,29 @@ type PipeLine struct {
 
 func (pipe *PipeLine) Append(cmd string, args ...interface{}) (err error) {
 
+	command := &Command{
+		Cmd:   cmd,
+		Args:  args,
+		rArgs: make([]interface{}, len(args)),
+	}
+
 	for i, v := range args {
 
 		if i == 0 {
 
+			command.rArgs[i] = v
+
 			continue
 		}
 
-		args[i], err = Encode(v)
+		command.rArgs[i], err = Encode(v)
 		if err != nil {
 
 			return
 		}
 	}
 
-	pipe.Commands = append(pipe.Commands, &Command{Cmd: cmd, Args: args})
+	pipe.Commands = append(pipe.Commands, command)
 
 	return
 }
@@ -1251,7 +1261,7 @@ func (r *Redis) RunPipeLine(pipe *PipeLine) bool {
 	var err error
 	for _, value := range pipe.Commands {
 
-		err = conn.Send(value.Cmd, value.Args...)
+		err = conn.Send(value.Cmd, value.rArgs...)
 		if err != nil {
 
 			pipe.RunErr = err
