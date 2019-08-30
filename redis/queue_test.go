@@ -70,7 +70,7 @@ func syncUserInfo(uid uint64, atype string, params ...interface{}) {
 }
 
 func syncUserInfoHandle(data []byte) {
-	err := uinfoTask.Send(data)
+	err := uinfoTask.SendMsg(data)
 	if err != nil {
 		fmt.Println("syncUserInfoHandle", err.Error())
 	}
