@@ -233,12 +233,12 @@ func TestRedis_Hmset_Hmget_Hset_Hget_Hincrby(t *testing.T) {
 	err = r.Hmget(key, GetEntityFields(obj), obj.GetFieldPtr()...)
 	if err != nil {
 
-		t.Errorf("Hmget:", "main", uid, err)
+		t.Errorf("Hmget: %s %d %v", "main", uid, err)
 	}
 
 	if obj.Uid != uid {
 
-		t.Errorf("obj.uid:", obj.Uid, uid)
+		t.Errorf("obj.uid: %d %d", obj.Uid, uid)
 	}
 	t.Log(obj)
 }

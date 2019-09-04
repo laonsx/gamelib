@@ -887,10 +887,10 @@ func (r *Redis) Subscribe(channels []string, cb func([]byte)) error {
 	conn := r.rp.Get()
 	defer conn.Close()
 
-	psc := redis.PubSubConn{conn}
+	psc := redis.PubSubConn{Conn: conn}
 	for _, cl := range channels {
 
-		psc.Subscribe(cl)
+		_ = psc.Subscribe(cl)
 	}
 
 	for {
@@ -1019,10 +1019,9 @@ func (r *Redis) Llen(key string) (int64, error) {
 	return data.(int64), err
 }
 
-func (r *Redis) Sadd(key string, members ...interface{}) error {
+func (r *Redis) Sadd(key string, members ...interface{}) (data bool, err error) {
 
 	var conn redis.Conn
-	var err error
 
 	args := make([]interface{}, len(members)+1)
 	args[0] = key
@@ -1031,7 +1030,7 @@ func (r *Redis) Sadd(key string, members ...interface{}) error {
 	for i := 0; i < 2; i++ {
 
 		conn = r.rp.Get()
-		_, err = conn.Do("SADD", args...)
+		data, err = redis.Bool(conn.Do("SADD", args...))
 		conn.Close()
 
 		if err == nil {
@@ -1042,7 +1041,7 @@ func (r *Redis) Sadd(key string, members ...interface{}) error {
 		time.Sleep(time.Duration(10) * time.Millisecond)
 	}
 
-	return err
+	return
 }
 
 func (r *Redis) Sismember(key string, member interface{}) (data bool, err error) {

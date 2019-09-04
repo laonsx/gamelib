@@ -59,13 +59,13 @@ func syncUserInfo(uid uint64, atype string, params ...interface{}) {
 
 	data, err := json.Marshal(qmsg)
 	if err != nil {
-		fmt.Println("SyncUserInfo uid=%d err=%s", uid, err.Error())
+		fmt.Println("SyncUserInfo uid=", uid, "err=", err.Error())
 		return
 	}
 
 	err = QPush("SyncUserInfo", data)
 	if err != nil {
-		fmt.Println("SyncUserInfo uid=%d err=%s", uid, err.Error())
+		fmt.Println("SyncUserInfo uid=", uid, "err=", err.Error())
 	}
 }
 
