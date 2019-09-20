@@ -89,7 +89,7 @@ func (server *Server) Close() {
 
 	for _, c := range conns {
 
-		c.Close()
+		_ = c.Close()
 	}
 }
 

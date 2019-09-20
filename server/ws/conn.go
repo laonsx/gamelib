@@ -106,7 +106,7 @@ func (c *Conn) IsClosed() bool {
 
 func (c *Conn) SetReadDeadline(t time.Duration) {
 
-	c.ws.SetReadDeadline(time.Now().Add(t))
+	_ = c.ws.SetReadDeadline(time.Now().Add(t))
 }
 
 func (c *Conn) RemoteAddr() net.Addr {
@@ -143,8 +143,8 @@ func (c *Conn) sendLoop() {
 			err := c.Send(msg)
 			if err != nil {
 
-				c.err = errors.New(fmt.Sprintf("send wsconn id=%d err=%v", c.id, err))
-				c.Close()
+				c.err = fmt.Errorf("send wsconn id=%d err=%v", c.id, err)
+				_ = c.Close()
 
 				return
 			}
@@ -158,8 +158,8 @@ func (c *Conn) sendLoop() {
 
 func (c *Conn) pong(deadline time.Duration) {
 
-	c.ws.SetReadDeadline(time.Now().Add(deadline))
-	c.sendMsg(websocket.PongMessage, []byte("pong"))
+	_ = c.ws.SetReadDeadline(time.Now().Add(deadline))
+	_ = c.sendMsg(websocket.PongMessage, []byte("pong"))
 }
 
 func (c *Conn) sendMsg(t int, b []byte) error {
