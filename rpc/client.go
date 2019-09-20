@@ -73,7 +73,7 @@ func GetName(pnum uint16) (sname string, err error) {
 		sname = s
 	} else {
 
-		err = errors.New(fmt.Sprintf("service not found by pnum(%d)", pnum))
+		err = fmt.Errorf("service not found by pnum(%d)", pnum)
 	}
 
 	return
@@ -87,7 +87,7 @@ func GetPNum(service string) (pnum uint16, err error) {
 		pnum = n
 	} else {
 
-		err = errors.New(fmt.Sprintf("pnum not found by service(%s)", service))
+		err = fmt.Errorf("pnum not found by service(%s)", service)
 	}
 
 	return
@@ -141,7 +141,7 @@ func StreamCall(node string, service string, data []byte, session *Session) ([]b
 	err = streamCache.stream.Send(&GameMsg{ServiceName: service, Msg: data, Session: session})
 	if err == io.EOF {
 
-		streamCache.stream.CloseSend()
+		_ = streamCache.stream.CloseSend()
 		streamCache.cancel()
 		streamCache.stream, streamCache.cancel, err = Stream(node, nil)
 		if err == nil {
