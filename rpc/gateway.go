@@ -36,7 +36,10 @@ func (s *Server) GatewayHandler(router *gin.Engine, sessionFunc SessionFunc) {
 					msg, err := c.GetRawData()
 					if err != nil {
 
-						log.Println()
+						log.Printf("rpcserver(%s) request body(%s) err(%v)", s.name, sname+"/"+mname, err)
+						_ = c.AbortWithError(http.StatusResetContent, err)
+
+						return
 					}
 
 					rvs := []reflect.Value{rcvr, reflect.ValueOf(msg), reflect.ValueOf(session)}
