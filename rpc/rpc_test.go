@@ -1,9 +1,16 @@
 package rpc
 
 import (
+	"bytes"
 	"fmt"
+	"gamelib/graceful"
+	"io/ioutil"
 	"net"
+	"net/http"
 	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
 
 	"google.golang.org/grpc"
 )
@@ -78,7 +85,7 @@ func TestRpc(t *testing.T) {
 		ServiceName: "TestRpc1.HelloWorld1",
 		Msg:         []byte("hello world"),
 	}
-	stream.Send(in)
+	_ = stream.Send(in)
 	result, err := stream.Recv()
 	if err != nil {
 
@@ -100,7 +107,7 @@ func TestRpc(t *testing.T) {
 		Msg:         []byte("hello rpc2"),
 	}
 
-	stream.Send(in2)
+	_ = stream.Send(in2)
 
 	result, err = stream.Recv()
 	if err != nil {
@@ -130,7 +137,7 @@ func TestRpc(t *testing.T) {
 	if err != nil {
 
 		t.Error("..............", err)
-		err = nil
+		//err = nil
 	}
 
 	t.Log(result)
@@ -180,4 +187,56 @@ func TestRpc(t *testing.T) {
 	//}
 	//
 	//t.Log(string(resp))
+}
+
+func TestServer_GatewayHandler(t *testing.T) {
+
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithInsecure())
+
+	InitClient(nodes, methods, opts)
+
+	var serverOpts []grpc.ServerOption
+	lis, err := net.Listen("tcp", "127.0.0.1:10000")
+	if err != nil {
+
+		panic(err)
+	}
+
+	rpcServer := NewServer("node1", lis, serverOpts)
+
+	go rpcServer.Start()
+
+	router := gin.New()
+	rpcServer.GatewayHandler(router, DefaultSessionFunc)
+
+	go graceful.ListenAndServe(":10001", router)
+
+	time.Sleep(time.Second)
+
+	resp, err := Call("node1", "TestRpc1.HelloWorld1", []byte("ahahahhahaha"), nil)
+	if err != nil {
+
+		t.Error(err)
+	}
+
+	t.Log(string(resp))
+
+	req, _ := http.NewRequest("POST", "http://127.0.0.1:10001/TestRpc1/HelloWorld1", bytes.NewBufferString("httprequesthahahaha"))
+	req.Header.Set("token", "123456")
+
+	client := &http.Client{}
+
+	resps, _ := client.Do(req)
+	b, _ := ioutil.ReadAll(resps.Body)
+	t.Log(string(b))
+
+	req, _ = http.NewRequest("POST", "http://127.0.0.1:10001/TestRpc2/HelloWorld2", bytes.NewBufferString("httprequesthahahaha"))
+	req.Header.Set("token", "654321")
+
+	resps, _ = client.Do(req)
+	b, _ = ioutil.ReadAll(resps.Body)
+	t.Log(string(b))
+
+	time.Sleep(time.Second)
 }
