@@ -55,7 +55,7 @@ func (s *Server) Start() {
 	RegisterGameServer(grpcServer, s)
 
 	log.Printf("rpcserver(%s) listening on %s", s.name, s.listener.Addr().String())
-	_ = grpcServer.Serve(s.listener)
+	grpcServer.Serve(s.listener)
 }
 
 // Stop 停止rpc服务
@@ -80,7 +80,7 @@ func (s *Server) Call(ctx context.Context, in *GameMsg) (*GameMsg, error) {
 	resp, err := serv.handle(mname, in)
 	if err != nil {
 
-		err = fmt.Errorf("rpcserver(%s) handle %v", s.name, err)
+		err = errors.New(fmt.Sprintf("rpcserver(%s) handle %v", s.name, err))
 	}
 
 	return resp, err
@@ -146,7 +146,7 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 
 			if !ok {
 
-				return fmt.Errorf("rpcserver(%s): service(%s) not found", s.name, sname)
+				return errors.New(fmt.Sprintf("rpcserver(%s): service(%s) not found", s.name, sname))
 			}
 
 			if in.Session == nil {
@@ -157,12 +157,12 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 			resp, err := serv.handle(mname, in)
 			if err != nil {
 
-				return fmt.Errorf("rpcserver(%s) handle %v", s.name, err)
+				return errors.New(fmt.Sprintf("rpcserver(%s) handle %v", s.name, err))
 			}
 
 			if err := stream.Send(resp); err != nil {
 
-				return fmt.Errorf("rpcserver(%s) streamsend, err=%v", s.name, err)
+				return errors.New(fmt.Sprintf("rpcserver(%s) streamsend, err=%v", s.name, err))
 			}
 
 		case <-quit:
@@ -245,7 +245,7 @@ func (s *service) handle(methodName string, in *GameMsg) (*GameMsg, error) {
 	method, ok := s.method[methodName]
 	if !ok {
 
-		return nil, fmt.Errorf("rpc.handle: method(%s) not found", methodName)
+		return nil, errors.New(fmt.Sprintf("rpc.handle: method(%s) not found", methodName))
 	}
 
 	function := method.Func
