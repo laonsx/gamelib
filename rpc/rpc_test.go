@@ -3,8 +3,6 @@ package rpc
 import (
 	"bytes"
 	"fmt"
-	"github.com/laonsx/gamelib/graceful"
-	"github.com/laonsx/gamelib/zookeeper"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -12,6 +10,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/laonsx/gamelib/graceful"
+	"github.com/laonsx/gamelib/zookeeper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
 )
