@@ -16,13 +16,13 @@ import (
 	"google.golang.org/grpc/balancer/roundrobin"
 )
 
-var nodes map[string]string = map[string]string{
+var nodes = map[string]string{
 	"node1": "127.0.0.1:10000",
 	"node2": "127.0.0.1:10000",
 }
 
-var methods []*ServiceConf = []*ServiceConf{
-	&ServiceConf{1001, "TestRpc1.HelloWorld1", "node1"},
+var methods = []*ServiceConf{
+	{1001, "TestRpc1.HelloWorld1", "node1"},
 }
 
 func init() {
@@ -75,7 +75,6 @@ func TestRpcWithZk(t *testing.T) {
 	}
 	rpcServer := NewServer("node1", lis, serverOpts)
 	go rpcServer.Start()
-	fmt.Println("regitster", zookeeper.Register("localhost:2181", "node1", "127.0.0.1:10000"))
 
 	stream, _, err := Stream("node1", map[string]string{SESSIONUID: "123321123321"})
 	if err != nil {
@@ -118,9 +117,6 @@ func TestRpcWithZk(t *testing.T) {
 	}
 
 	t.Log(result)
-
-	fmt.Println("................")
-	time.Sleep(time.Second * 30)
 
 	zookeeper.UnRegister()
 }
