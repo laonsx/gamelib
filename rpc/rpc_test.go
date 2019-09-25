@@ -3,8 +3,8 @@ package rpc
 import (
 	"bytes"
 	"fmt"
-	"gamelib/graceful"
-	"gamelib/zookeeper"
+	"github.com/laonsx/gamelib/graceful"
+	"github.com/laonsx/gamelib/zookeeper"
 	"io/ioutil"
 	"net"
 	"net/http"
