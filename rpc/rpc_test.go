@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"gamelib/graceful"
+	"gamelib/zookeeper"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -11,8 +12,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer/roundrobin"
 )
 
 var nodes map[string]string = map[string]string{
@@ -20,8 +21,8 @@ var nodes map[string]string = map[string]string{
 	"node2": "127.0.0.1:10000",
 }
 
-var methods [][]string = [][]string{
-	[]string{"1001", "TestRpc1.HelloWorld1"},
+var methods []*ServiceConf = []*ServiceConf{
+	&ServiceConf{1001, "TestRpc1.HelloWorld1", "node1"},
 }
 
 func init() {
@@ -57,8 +58,71 @@ func TestRpc_GetName(t *testing.T) {
 	opts = append(opts, grpc.WithInsecure())
 	InitClient(nodes, methods, opts)
 
-	sname, err := GetName(uint16(1001))
-	t.Log(sname, err)
+	node, sname, err := GetName(uint16(1001))
+
+	t.Log(node, sname, err)
+}
+
+func TestRpcWithZk(t *testing.T) {
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithBalancerName(roundrobin.Name), grpc.WithInsecure(), grpc.WithBlock())
+	InitClient(map[string]string{"node1": zookeeper.InitGrpcDialUrl("localhost:2181", "node1")}, methods, opts)
+
+	var serverOpts []grpc.ServerOption
+	lis, err := net.Listen("tcp", "127.0.0.1:10000")
+	if err != nil {
+		panic(err)
+	}
+	rpcServer := NewServer("node1", lis, serverOpts)
+	go rpcServer.Start()
+	fmt.Println("regitster", zookeeper.Register("localhost:2181", "node1", "127.0.0.1:10000"))
+
+	stream, _, err := Stream("node1", map[string]string{SESSIONUID: "123321123321"})
+	if err != nil {
+
+		t.Error(err)
+	}
+
+	in := &GameMsg{
+		ServiceName: "TestRpc1.HelloWorld1",
+		Msg:         []byte("hello world"),
+	}
+	_ = stream.Send(in)
+	result, err := stream.Recv()
+	if err != nil {
+
+		t.Error(err)
+	}
+
+	t.Log(result)
+
+	resp, err := Call("node1", "TestRpc2.HelloWorld2", []byte("ahahahhahaha"), nil)
+	if err != nil {
+
+		t.Error(err)
+	}
+
+	t.Log(string(resp))
+
+	in2 := &GameMsg{
+		ServiceName: "TestRpc2.HelloWorld2",
+		Msg:         []byte("hello rpc2"),
+	}
+
+	_ = stream.Send(in2)
+
+	result, err = stream.Recv()
+	if err != nil {
+
+		t.Error(err)
+	}
+
+	t.Log(result)
+
+	fmt.Println("................")
+	time.Sleep(time.Second * 30)
+
+	zookeeper.UnRegister()
 }
 
 func TestRpc(t *testing.T) {

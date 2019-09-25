@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
 	"sync"
 	"time"
 
@@ -22,43 +21,37 @@ var (
 )
 
 // InitClient 初始化客户端
-func InitClient(cluster map[string]string, services [][]string, opts []grpc.DialOption) {
+func InitClient(cluster map[string]string, services []*ServiceConf, opts []grpc.DialOption) {
 
 	client = new(Client)
 	client.clients = make(map[string]GameClient)
 	client.cluster = cluster
 
-	serviceMap := make(map[string]uint16)
-	servicesNumMap := make(map[uint16]string)
+	serviceMap := make(map[string]*ServiceConf)
+	servicesNumMap := make(map[uint16]*ServiceConf)
 
 	for _, v := range services {
 
-		pnum, _ := strconv.Atoi(v[0])
-		sname := v[1]
-
-		serviceMap[sname] = uint16(pnum)
-		servicesNumMap[uint16(pnum)] = sname
+		serviceMap[v.Sname] = v
+		servicesNumMap[v.Pnum] = v
 	}
 	client.servicesMap = serviceMap
 	client.servicesNumMap = servicesNumMap
 	client.opts = opts
 }
 
-func ReloadMethodConf(services [][]string) {
+func ReloadMethodConf(services []*ServiceConf) {
 
 	client.mux.Lock()
 	defer client.mux.Unlock()
 
-	serviceMap := make(map[string]uint16)
-	servicesNumMap := make(map[uint16]string)
+	serviceMap := make(map[string]*ServiceConf)
+	servicesNumMap := make(map[uint16]*ServiceConf)
 
 	for _, v := range services {
 
-		pnum, _ := strconv.Atoi(v[0])
-		sname := v[1]
-
-		serviceMap[sname] = uint16(pnum)
-		servicesNumMap[uint16(pnum)] = sname
+		serviceMap[v.Sname] = v
+		servicesNumMap[v.Pnum] = v
 	}
 
 	client.servicesMap = serviceMap
@@ -66,11 +59,12 @@ func ReloadMethodConf(services [][]string) {
 }
 
 // GetName 根据协议号 获取节点名称和服务名
-func GetName(pnum uint16) (sname string, err error) {
+func GetName(pnum uint16) (node, sname string, err error) {
 
 	if s, ok := client.servicesNumMap[pnum]; ok {
 
-		sname = s
+		node = s.Node
+		sname = s.Sname
 	} else {
 
 		err = fmt.Errorf("service not found by pnum(%d)", pnum)
@@ -80,11 +74,12 @@ func GetName(pnum uint16) (sname string, err error) {
 }
 
 // GetPNum 根据服务名 获取协议号
-func GetPNum(service string) (pnum uint16, err error) {
+func GetPNum(service string) (node string, pnum uint16, err error) {
 
-	if n, ok := client.servicesMap[service]; ok {
+	if s, ok := client.servicesMap[service]; ok {
 
-		pnum = n
+		node = s.Node
+		pnum = s.Pnum
 	} else {
 
 		err = fmt.Errorf("pnum not found by service(%s)", service)
@@ -189,9 +184,15 @@ type Client struct {
 	mux            sync.Mutex
 	clients        map[string]GameClient
 	cluster        map[string]string
-	servicesMap    map[string]uint16
-	servicesNumMap map[uint16]string
+	servicesMap    map[string]*ServiceConf
+	servicesNumMap map[uint16]*ServiceConf
 	opts           []grpc.DialOption
+}
+
+type ServiceConf struct {
+	Pnum  uint16 `json:"pnum"`
+	Sname string `json:"sname"`
+	Node  string `json:"node"`
 }
 
 func (c *Client) newClient(node string) (GameClient, error) {
