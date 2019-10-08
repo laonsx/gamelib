@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,9 +12,11 @@ type SessionFunc func(req *http.Request) *Session
 
 func DefaultSessionFunc(req *http.Request) *Session {
 
-	uid, _ := strconv.ParseUint(req.Header.Get("token"), 10, 64)
+	//uid, _ := strconv.ParseUint(req.Header.Get("token"), 10, 64)
 
-	return &Session{Uid: uid}
+	//return &Session{Uid: uid}
+
+	return &Session{}
 }
 
 func (s *Server) GatewayHandler(router *gin.Engine, sessionFunc SessionFunc) {

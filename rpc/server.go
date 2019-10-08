@@ -43,6 +43,7 @@ func NewServer(name string, lis net.Listener, opts []grpc.ServerOption) *Server 
 	server.name = name
 	server.listener = lis
 	server.opts = opts
+
 	return server
 }
 

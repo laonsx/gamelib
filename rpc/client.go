@@ -73,7 +73,7 @@ func GetName(pnum uint16) (node, sname string, err error) {
 	return
 }
 
-// GetPNum 根据服务名 获取协议号
+// GetPNum 根据服务名 获取节点名称和协议号
 func GetPNum(service string) (node string, pnum uint16, err error) {
 
 	if s, ok := client.servicesMap[service]; ok {
