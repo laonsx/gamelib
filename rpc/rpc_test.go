@@ -300,3 +300,32 @@ func TestServer_GatewayHandler(t *testing.T) {
 
 	time.Sleep(time.Second)
 }
+
+func TestUnmarshal(t *testing.T) {
+
+	type Test struct {
+		Haha string
+	}
+
+	teststruct := &Test{Haha: "haha"}
+
+	data, err := Marshal(CodecType_Json, teststruct)
+	fmt.Println(string(data), err)
+
+	teststruct2 := &Test{}
+
+	err = Unmarshal(CodecType_Json, data, teststruct2)
+	fmt.Println(teststruct2, err)
+
+	s := &Session{
+		Uid:   1111,
+		Codec: CodecType_ProtoBuf,
+	}
+
+	data1, err1 := Marshal(CodecType_ProtoBuf, s)
+	fmt.Println(err1)
+
+	ss := &Session{}
+	err1 = Unmarshal(CodecType_ProtoBuf, data1, ss)
+	fmt.Println(ss, err1)
+}
