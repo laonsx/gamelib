@@ -260,7 +260,7 @@ func TestServer_GatewayHandler(t *testing.T) {
 	lis, err := net.Listen("tcp", "127.0.0.1:10000")
 	if err != nil {
 
-		panic(err)
+		t.Error(err)
 	}
 
 	rpcServer := NewServer("node1", lis, serverOpts)

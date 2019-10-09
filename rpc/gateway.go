@@ -25,31 +25,30 @@ func (s *Server) GatewayHandler(router *gin.Engine, sessionFunc SessionFunc) {
 
 		for mname, method := range service.method {
 
-			router.POST(sname+"/"+mname, func() gin.HandlerFunc {
+			function := method.Func
+			rcvr := service.rcvr
+			relativePath := sname + "/" + mname
+			name := s.name
 
-				function := method.Func
-				rcvr := service.rcvr
+			router.POST(relativePath, func(c *gin.Context) {
 
-				return func(c *gin.Context) {
+				session := sessionFunc(c.Request)
 
-					session := sessionFunc(c.Request)
+				msg, err := c.GetRawData()
+				if err != nil {
 
-					msg, err := c.GetRawData()
-					if err != nil {
+					log.Printf("rpcserver(%s) request body(%s) err(%v)", name, relativePath, err)
+					_ = c.AbortWithError(http.StatusResetContent, err)
 
-						log.Printf("rpcserver(%s) request body(%s) err(%v)", s.name, sname+"/"+mname, err)
-						_ = c.AbortWithError(http.StatusResetContent, err)
-
-						return
-					}
-
-					rvs := []reflect.Value{rcvr, reflect.ValueOf(msg), reflect.ValueOf(session)}
-					ret := function.Call(rvs)
-					resp := ret[0].Bytes()
-
-					c.Data(http.StatusOK, c.ContentType(), resp)
+					return
 				}
-			}())
+
+				rvs := []reflect.Value{rcvr, reflect.ValueOf(msg), reflect.ValueOf(session)}
+				ret := function.Call(rvs)
+				resp := ret[0].Bytes()
+
+				c.Data(http.StatusOK, c.ContentType(), resp)
+			})
 		}
 	}
 }
