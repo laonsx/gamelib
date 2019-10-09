@@ -37,7 +37,7 @@ func (s *Server) GatewayHandler(router *gin.Engine, sessionFunc SessionFunc) {
 				msg, err := c.GetRawData()
 				if err != nil {
 
-					log.Printf("rpcserver(%s) request body(%s) err(%v)", name, relativePath, err)
+					log.Printf("rpcserver(%s) relativepath(%s) request body err(%v)", name, relativePath, err)
 					_ = c.AbortWithError(http.StatusResetContent, err)
 
 					return
