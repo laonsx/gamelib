@@ -918,7 +918,7 @@ func (r *Redis) Publish(channel string, msg []byte) error {
 	conn := r.rp.Get()
 	defer conn.Close()
 
-	_, err := conn.Do("PUBLISH", msg)
+	_, err := conn.Do("PUBLISH", channel, msg)
 
 	return err
 }
