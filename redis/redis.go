@@ -404,36 +404,6 @@ func (r *Redis) HmgetByKey(key string, args string) (interface{}, error) {
 	return nil, err
 }
 
-func (r *Redis) ToStrings(value interface{}, err error) ([]string, error) {
-
-	return redis.Strings(value, err)
-}
-
-func (r *Redis) ToInt64s(value interface{}, err error) ([]int64, error) {
-
-	return redis.Int64s(value, err)
-}
-
-func (r *Redis) ToInts(value interface{}, err error) ([]int, error) {
-
-	return redis.Ints(value, err)
-}
-
-func (r *Redis) ToString(value interface{}, err error) (string, error) {
-
-	return redis.String(value, err)
-}
-
-func (r *Redis) ToStringMap(value interface{}, err error) (map[string]string, error) {
-
-	return redis.StringMap(value, err)
-}
-
-func (r *Redis) HgetallToMap(value interface{}, v interface{}) error {
-
-	return Decode(value, v)
-}
-
 func (r *Redis) Hmget(key string, fields []interface{}, v ...interface{}) (err error) {
 
 	fieldsN := len(fields)
@@ -1293,6 +1263,36 @@ func (r *Redis) RunPipeLine(pipe *PipeLine) bool {
 func hash(id uint64) int {
 
 	return int(id % uint64(128))
+}
+
+func ToString(value interface{}, err error) (string, error) {
+
+	return redis.String(value, err)
+}
+
+func ToStrings(value interface{}, err error) ([]string, error) {
+
+	return redis.Strings(value, err)
+}
+
+func ToInt64s(value interface{}, err error) ([]int64, error) {
+
+	return redis.Int64s(value, err)
+}
+
+func ToInts(value interface{}, err error) ([]int, error) {
+
+	return redis.Ints(value, err)
+}
+
+func ToStringMap(value interface{}, err error) (map[string]string, error) {
+
+	return redis.StringMap(value, err)
+}
+
+func HgetallToMap(value interface{}, v interface{}) error {
+
+	return Decode(value, v)
 }
 
 func Encode(data interface{}) (b []byte, err error) {
