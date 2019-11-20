@@ -173,8 +173,8 @@ func (s *Server) Stream(stream Game_StreamServer) error {
 	}
 }
 
-// RegisterService 注册一个服务
-func RegisterService(v interface{}) {
+// RegisterService 注册服务
+func RegisterService(vs ...interface{}) {
 
 	server.mux.Lock()
 	defer server.mux.Unlock()
@@ -184,23 +184,26 @@ func RegisterService(v interface{}) {
 		server.serviceMap = make(map[string]*service)
 	}
 
-	s := new(service)
-	s.typ = reflect.TypeOf(v)
-	s.rcvr = reflect.ValueOf(v)
-	sname := reflect.Indirect(s.rcvr).Type().Name()
-	if sname == "" {
+	for _, v := range vs {
 
-		panic("rpc.Register: no service name for type " + s.typ.String())
+		s := new(service)
+		s.typ = reflect.TypeOf(v)
+		s.rcvr = reflect.ValueOf(v)
+		sname := reflect.Indirect(s.rcvr).Type().Name()
+		if sname == "" {
+
+			panic("rpc.Register: no service name for type " + s.typ.String())
+		}
+
+		if _, present := server.serviceMap[sname]; present {
+
+			panic("rpc.Register: service already defined " + sname)
+		}
+
+		s.name = sname
+		s.method = suitableMethods(s.typ)
+		server.serviceMap[s.name] = s
 	}
-
-	if _, present := server.serviceMap[sname]; present {
-
-		panic("rpc.Register: service already defined " + sname)
-	}
-
-	s.name = sname
-	s.method = suitableMethods(s.typ)
-	server.serviceMap[s.name] = s
 }
 
 func suitableMethods(typ reflect.Type) map[string]reflect.Method {
