@@ -1180,6 +1180,7 @@ type Command struct {
 	Args   []interface{}
 	Err    error
 	Result interface{}
+	Tag    int
 
 	rArgs []interface{}
 }
@@ -1198,6 +1199,36 @@ func (pipe *PipeLine) Append(cmd string, args ...interface{}) (err error) {
 	command := &Command{
 		Cmd:   cmd,
 		Args:  args,
+		rArgs: make([]interface{}, len(args)),
+	}
+
+	for i, v := range args {
+
+		if i == 0 {
+
+			command.rArgs[i] = v
+
+			continue
+		}
+
+		command.rArgs[i], err = Encode(v)
+		if err != nil {
+
+			return
+		}
+	}
+
+	pipe.Commands = append(pipe.Commands, command)
+
+	return
+}
+
+func (pipe *PipeLine) AppendWithTag(cmd string, tag int, args ...interface{}) (err error) {
+
+	command := &Command{
+		Cmd:   cmd,
+		Args:  args,
+		Tag:   tag,
 		rArgs: make([]interface{}, len(args)),
 	}
 
