@@ -1,4 +1,4 @@
-package redis
+package queue
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/laonsx/gamelib/codec"
 	"github.com/laonsx/gamelib/gofunc"
+	"github.com/laonsx/gamelib/redis"
 	"github.com/laonsx/gamelib/task"
 )
 
@@ -14,7 +15,7 @@ func init() {
 
 	uinfoTask = task.New(32, syncUserInfoTask)
 
-	InitRedis(codec.MsgPack, codec.UnMsgPack, NewRedisConf("queue", "127.0.0.1", "6378", 0))
+	redis.InitRedis(codec.MsgPack, codec.UnMsgPack, redis.NewRedisConf("queue", "127.0.0.1", "6379", 0))
 
 	RegisterQueueHandler("SyncUserInfo", syncUserInfoHandle)
 }
