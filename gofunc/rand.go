@@ -144,5 +144,5 @@ func RandString(seed string) string {
 
 	var base = fmt.Sprintf("%s%d%d", seed, time.Now().UnixNano(), rand.Int())
 
-	return string(result[0:4]) + MD5(base) + string(result[4:])
+	return string(result[:4]) + MD5(base) + string(result[4:])
 }
