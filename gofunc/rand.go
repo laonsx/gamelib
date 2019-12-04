@@ -136,13 +136,13 @@ var (
 
 func RandString(seed string) string {
 
-	result := []byte{}
+	result := [9]byte{}
 	for i := 0; i < 9; i++ {
 
-		result = append(result, bytesArray[rand.Intn(bytesLen)])
+		result[i] = bytesArray[rand.Intn(bytesLen)]
 	}
 
 	var base = fmt.Sprintf("%s%d%d", seed, time.Now().UnixNano(), rand.Int())
 
-	return string(result) + MD5(base)
+	return string(result[0:4]) + MD5(base) + string(result[4:])
 }
