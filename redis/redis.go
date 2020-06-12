@@ -175,12 +175,12 @@ func (r *Redis) Get(key string, v interface{}) (err error) {
 		return err
 	}
 
-	if data != nil {
+	if data == nil {
 
-		return Decode(data, v)
+		return KeyNotExistsErr
 	}
 
-	return nil
+	return Decode(data, v)
 }
 
 func (r *Redis) Set(key string, data interface{}, expire ...int) (err error) {
@@ -1185,8 +1185,19 @@ type Command struct {
 	rArgs []interface{}
 }
 
-func (c *Command) ResultValue(result interface{}) error {
+func (c *Command) ResultDecodeValue(result interface{}) error {
+
 	return Decode(c.Result, result)
+}
+
+func (c *Command) ResultInt() (int64, error) {
+
+	if c.Result == nil {
+
+		return 0, errors.New("command result nil")
+	}
+
+	return reflect.ValueOf(c.Result).Int(), nil
 }
 
 type PipeLine struct {
@@ -1195,6 +1206,24 @@ type PipeLine struct {
 }
 
 func (pipe *PipeLine) Append(cmd string, args ...interface{}) (err error) {
+
+	command := &Command{
+		Cmd:   cmd,
+		Args:  args,
+		rArgs: make([]interface{}, len(args)),
+	}
+
+	for i, v := range args {
+
+		command.rArgs[i] = v
+	}
+
+	pipe.Commands = append(pipe.Commands, command)
+
+	return
+}
+
+func (pipe *PipeLine) AppendEncode(cmd string, args ...interface{}) (err error) {
 
 	command := &Command{
 		Cmd:   cmd,
@@ -1224,6 +1253,25 @@ func (pipe *PipeLine) Append(cmd string, args ...interface{}) (err error) {
 }
 
 func (pipe *PipeLine) AppendWithTag(cmd string, tag int, args ...interface{}) (err error) {
+
+	command := &Command{
+		Cmd:   cmd,
+		Args:  args,
+		Tag:   tag,
+		rArgs: make([]interface{}, len(args)),
+	}
+
+	for i, v := range args {
+
+		command.rArgs[i] = v
+	}
+
+	pipe.Commands = append(pipe.Commands, command)
+
+	return
+}
+
+func (pipe *PipeLine) AppendEncodeWithTag(cmd string, tag int, args ...interface{}) (err error) {
 
 	command := &Command{
 		Cmd:   cmd,
@@ -1531,3 +1579,7 @@ func Decode(data interface{}, iv interface{}) error {
 
 	return nil
 }
+
+var (
+	KeyNotExistsErr = errors.New("key not exists")
+)
