@@ -47,21 +47,20 @@ func (mc *MulticastService) NewChannel(id string, size int) {
 	suChan := &superChannel{size: size, chans: channels}
 
 	mc.Lock()
-	defer mc.Unlock()
-
 	mc.channels[id] = suChan
+	mc.Unlock()
 }
 
 //DelChannel 删除频道
 func (mc *MulticastService) DelChannel(id string) {
 
-	suChan, _ := mc.getsuperChannel(id)
+	suChan, _ := mc.getSuperChannel(id)
 	if suChan == nil {
 
 		return
 	}
 
-	suChan.allUnsubscribe()
+	suChan.allUnSubscribe()
 
 	mc.Lock()
 	delete(mc.channels, id)
@@ -71,66 +70,29 @@ func (mc *MulticastService) DelChannel(id string) {
 // Subscribe 订阅
 func (mc *MulticastService) Subscribe(chanId string, uid uint64) error {
 
-	sc, err := mc.getsuperChannel(chanId)
+	sc, err := mc.getSuperChannel(chanId)
 	if err != nil {
 
 		return err
 	}
 
 	sub := mc.handle.Subscribe(chanId, uid)
-	if err != nil {
-
-		return err
-	}
-
 	sc.subscribe(uid, sub)
-
-	//if agent := agentService.getAgent(data.Uid); agent != nil {
-	//	if !agent.isOnline() {
-	//		return nil
-	//	}
-	//
-	//	if id := agent.getSubId(data.ChanId); id > 0 {
-	//		return nil
-	//	}
-	//
-	//	mc.mux.Lock()
-	//	mc.id++
-	//	mc.mux.Unlock()
-	//
-	//	sub := new(subscriber)
-	//	sub.id = mc.id
-	//	sub.handle = func(msg *MulticastMsg) {
-	//		agent.output(msg.PNum, msg.Msg)
-	//	}
-	//
-	//	if agent.addSub(data.ChanId, sub.id) {
-	//		c.subscribe(sub.id, sub)
-	//		log.Infof("multicast sub, id=%s uid=%d", data.ChanId, data.Uid)
-	//	}
-	//}
 
 	return nil
 }
 
 // UnSubscribe 退订
 func (mc *MulticastService) UnSubscribe(chanId string, uid uint64) error {
-	sc, err := mc.getsuperChannel(chanId)
+
+	sc, err := mc.getSuperChannel(chanId)
 	if err != nil {
+
 		return err
 	}
 
 	mc.handle.UnSubscribe(chanId, uid)
-
-	sc.unsubscribe(uid)
-	//if agent, ok := agentService.agents[data.Uid]; ok {
-	//	if subid := agent.getSubId(data.ChanId); subid > 0 {
-	//		c.unsubscribe(subid)
-	//		agent.delSub(data.ChanId)
-	//	}
-	//
-	//	log.Infof("multicast unsub, id=%s uid=%d", data.ChanId, data.Uid)
-	//}
+	sc.unSubscribe(uid)
 
 	return nil
 }
@@ -140,13 +102,13 @@ func (mc *MulticastService) UnSubscribeAll(uid uint64, subs map[string]bool) err
 
 	for chanid := range subs {
 
-		sc, err := mc.getsuperChannel(chanid)
+		sc, err := mc.getSuperChannel(chanid)
 		if err != nil {
 
 			return err
 		}
 
-		sc.unsubscribe(uid)
+		sc.unSubscribe(uid)
 	}
 
 	return nil
@@ -155,7 +117,7 @@ func (mc *MulticastService) UnSubscribeAll(uid uint64, subs map[string]bool) err
 // Publish 发布消息
 func (mc *MulticastService) Publish(chanId string, msg interface{}) error {
 
-	sc, err := mc.getsuperChannel(chanId)
+	sc, err := mc.getSuperChannel(chanId)
 	if err != nil {
 
 		return err
@@ -166,12 +128,12 @@ func (mc *MulticastService) Publish(chanId string, msg interface{}) error {
 	return nil
 }
 
-func (mc *MulticastService) getsuperChannel(id string) (*superChannel, error) {
+func (mc *MulticastService) getSuperChannel(id string) (*superChannel, error) {
 
 	mc.RLock()
-	defer mc.RUnlock()
-
 	v, ok := mc.channels[id]
+	mc.RUnlock()
+
 	if !ok {
 
 		return nil, errors.New("superChannel does not exist")
@@ -196,17 +158,17 @@ func (sc *superChannel) subscribe(uid uint64, s func(interface{})) {
 	channel.subscribe(uid, s)
 }
 
-func (sc *superChannel) unsubscribe(uid uint64) {
+func (sc *superChannel) unSubscribe(uid uint64) {
 
 	channel := sc.getChannel(uid)
-	channel.unsubscribe(uid)
+	channel.unSubscribe(uid)
 }
 
-func (sc *superChannel) allUnsubscribe() {
+func (sc *superChannel) allUnSubscribe() {
 
 	for _, v := range sc.chans {
 
-		go v.allUnsubscribe()
+		go v.allUnSubscribe()
 	}
 }
 
@@ -227,29 +189,31 @@ type channel struct {
 func (c *channel) subscribe(uid uint64, s func(interface{})) {
 
 	c.Lock()
-	defer c.Unlock()
 
 	c.subs[uid] = s
+
+	c.Unlock()
 }
 
-func (c *channel) unsubscribe(uid uint64) {
+func (c *channel) unSubscribe(uid uint64) {
 
 	c.Lock()
-	defer c.Unlock()
 
 	delete(c.subs, uid)
+
+	c.Unlock()
 }
 
-func (c *channel) allUnsubscribe() {
+func (c *channel) allUnSubscribe() {
 
 	c.Lock()
-	defer c.Unlock()
 
 	for k := range c.subs {
 
 		delete(c.subs, k)
 	}
 
+	c.Unlock()
 }
 
 func (c *channel) publish(msg interface{}) {
