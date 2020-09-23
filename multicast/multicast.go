@@ -265,6 +265,7 @@ func (c *channel) publish(msg interface{}) {
 	c.RUnlock()
 
 	for _, f := range fs {
+
 		f(msg)
 	}
 }
