@@ -255,11 +255,17 @@ func (c *channel) allUnsubscribe() {
 func (c *channel) publish(msg interface{}) {
 
 	c.RLock()
-	defer c.RUnlock()
 
+	fs := make([]func(interface{}), 0, len(c.subs))
 	for _, v := range c.subs {
 
-		v(msg)
+		fs = append(fs, v)
+	}
+
+	c.RUnlock()
+
+	for _, f := range fs {
+		f(msg)
 	}
 }
 
